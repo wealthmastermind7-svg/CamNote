@@ -1,5 +1,6 @@
 import React from "react";
-import { StyleSheet, Pressable, ViewStyle } from "react-native";
+import { StyleSheet, Pressable, ViewStyle, Platform, View } from "react-native";
+import { BlurView } from "expo-blur";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -8,8 +9,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { ThemedText } from "@/components/ThemedText";
-import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Colors, Spacing, BorderRadius, GlassStyles } from "@/constants/theme";
 
 interface CardProps {
   elevation?: number;
@@ -18,6 +18,7 @@ interface CardProps {
   children?: React.ReactNode;
   onPress?: () => void;
   style?: ViewStyle;
+  glass?: boolean;
 }
 
 const springConfig: WithSpringConfig = {
@@ -53,11 +54,16 @@ export function Card({
   children,
   onPress,
   style,
+  glass = false,
 }: CardProps) {
-  const { theme } = useTheme();
+  const theme = Colors.dark;
   const scale = useSharedValue(1);
 
-  const cardBackgroundColor = getBackgroundColorForElevation(elevation, theme);
+  const cardBackgroundColor = glass
+    ? Platform.OS === "ios"
+      ? "transparent"
+      : theme.glass
+    : getBackgroundColorForElevation(elevation, theme);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -71,6 +77,31 @@ export function Card({
     scale.value = withSpring(1, springConfig);
   };
 
+  const content = (
+    <>
+      {glass && Platform.OS === "ios" ? (
+        <BlurView
+          intensity={GlassStyles.blurIntensity}
+          tint="dark"
+          style={StyleSheet.absoluteFill}
+        />
+      ) : null}
+      <View style={styles.innerContent}>
+        {title ? (
+          <ThemedText type="h4" style={styles.cardTitle}>
+            {title}
+          </ThemedText>
+        ) : null}
+        {description ? (
+          <ThemedText type="small" style={[styles.cardDescription, { color: theme.textSecondary }]}>
+            {description}
+          </ThemedText>
+        ) : null}
+        {children}
+      </View>
+    </>
+  );
+
   return (
     <AnimatedPressable
       onPress={onPress}
@@ -80,30 +111,25 @@ export function Card({
         styles.card,
         {
           backgroundColor: cardBackgroundColor,
+          borderColor: glass ? theme.glassBorder : "transparent",
+          borderWidth: glass ? 1 : 0,
         },
         animatedStyle,
         style,
       ]}
     >
-      {title ? (
-        <ThemedText type="h4" style={styles.cardTitle}>
-          {title}
-        </ThemedText>
-      ) : null}
-      {description ? (
-        <ThemedText type="small" style={styles.cardDescription}>
-          {description}
-        </ThemedText>
-      ) : null}
-      {children}
+      {content}
     </AnimatedPressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    padding: Spacing.xl,
     borderRadius: BorderRadius["2xl"],
+    overflow: "hidden",
+  },
+  innerContent: {
+    padding: Spacing.xl,
   },
   cardTitle: {
     marginBottom: Spacing.sm,

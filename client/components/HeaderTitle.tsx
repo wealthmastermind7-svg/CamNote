@@ -2,13 +2,15 @@ import React from "react";
 import { View, StyleSheet, Image } from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
-import { Spacing } from "@/constants/theme";
+import { Colors, Spacing } from "@/constants/theme";
 
 interface HeaderTitleProps {
-  title: string;
+  title?: string;
 }
 
-export function HeaderTitle({ title }: HeaderTitleProps) {
+export function HeaderTitle({ title = "CamNote" }: HeaderTitleProps) {
+  const theme = Colors.dark;
+
   return (
     <View style={styles.container}>
       <Image
@@ -16,7 +18,9 @@ export function HeaderTitle({ title }: HeaderTitleProps) {
         style={styles.icon}
         resizeMode="contain"
       />
-      <ThemedText style={styles.title}>{title}</ThemedText>
+      <ThemedText type="h4" style={styles.title}>
+        {title}
+      </ThemedText>
     </View>
   );
 }
@@ -33,7 +37,6 @@ const styles = StyleSheet.create({
     marginRight: Spacing.sm,
   },
   title: {
-    fontSize: 17,
-    fontWeight: "600",
+    fontWeight: "700",
   },
 });

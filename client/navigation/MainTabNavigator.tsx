@@ -2,64 +2,86 @@ import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
-import { Platform, StyleSheet } from "react-native";
-import HomeStackNavigator from "@/navigation/HomeStackNavigator";
-import ProfileStackNavigator from "@/navigation/ProfileStackNavigator";
-import { useTheme } from "@/hooks/useTheme";
+import { Platform, StyleSheet, View } from "react-native";
+import { Colors, BorderRadius } from "@/constants/theme";
+
+import ScanScreen from "@/screens/ScanScreen";
+import FilesScreen from "@/screens/FilesScreen";
+import ToolsScreen from "@/screens/ToolsScreen";
 
 export type MainTabParamList = {
-  HomeTab: undefined;
-  ProfileTab: undefined;
+  ScanTab: undefined;
+  FilesTab: undefined;
+  ToolsTab: undefined;
 };
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export default function MainTabNavigator() {
-  const { theme, isDark } = useTheme();
+  const theme = Colors.dark;
 
   return (
     <Tab.Navigator
-      initialRouteName="HomeTab"
+      initialRouteName="ScanTab"
       screenOptions={{
-        tabBarActiveTintColor: theme.tabIconSelected,
+        tabBarActiveTintColor: theme.accent,
         tabBarInactiveTintColor: theme.tabIconDefault,
         tabBarStyle: {
           position: "absolute",
           backgroundColor: Platform.select({
             ios: "transparent",
-            android: theme.backgroundRoot,
+            android: theme.backgroundDefault,
+            web: theme.backgroundDefault,
           }),
           borderTopWidth: 0,
           elevation: 0,
+          height: Platform.select({ ios: 88, android: 70, web: 70 }),
+          paddingBottom: Platform.select({ ios: 28, android: 8, web: 8 }),
         },
         tabBarBackground: () =>
           Platform.OS === "ios" ? (
             <BlurView
-              intensity={100}
-              tint={isDark ? "dark" : "light"}
+              intensity={60}
+              tint="dark"
               style={StyleSheet.absoluteFill}
             />
-          ) : null,
+          ) : (
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: theme.backgroundDefault }]} />
+          ),
         headerShown: false,
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: "500",
+        },
       }}
     >
       <Tab.Screen
-        name="HomeTab"
-        component={HomeStackNavigator}
+        name="ScanTab"
+        component={ScanScreen}
         options={{
-          title: "Home",
+          title: "Scan",
           tabBarIcon: ({ color, size }) => (
-            <Feather name="home" size={size} color={color} />
+            <Feather name="camera" size={size} color={color} />
           ),
         }}
       />
       <Tab.Screen
-        name="ProfileTab"
-        component={ProfileStackNavigator}
+        name="FilesTab"
+        component={FilesScreen}
         options={{
-          title: "Profile",
+          title: "Files",
           tabBarIcon: ({ color, size }) => (
-            <Feather name="user" size={size} color={color} />
+            <Feather name="folder" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="ToolsTab"
+        component={ToolsScreen}
+        options={{
+          title: "Tools",
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="tool" size={size} color={color} />
           ),
         }}
       />
