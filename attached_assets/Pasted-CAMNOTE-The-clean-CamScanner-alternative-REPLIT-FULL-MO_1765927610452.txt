@@ -1,0 +1,195 @@
+CAMNOTE
+The clean CamScanner alternative
+🔹 REPLIT FULL MONOREPO PROMPT
+
+Create a production-ready Expo monorepo named CamNote, iOS-first.
+
+CamNote is a premium document scanning, conversion, and signing app that is dramatically simpler and more intuitive than CamScanner. Every core action must be reachable in two taps or less.
+
+ARCHITECTURE
+
+Expo (latest)
+
+TypeScript
+
+React Navigation (bottom tabs)
+
+expo-camera
+
+expo-blur
+
+expo-haptics
+
+expo-image-manipulator
+
+react-native-reanimated
+
+RevenueCat
+
+Zustand state store
+
+iOS-only configuration
+
+NAVIGATION (CRITICAL)
+
+Bottom tab navigation with ONLY 3 tabs:
+
+Scan
+
+Files
+
+Tools
+
+No hamburger menus.
+No tool walls.
+Contextual tools only.
+
+VISUAL DESIGN SYSTEM
+
+Base color: deep graphite #0A0C10
+
+Glass panels:
+
+White at 18–22% opacity
+
+Blur radius 35
+
+Soft inner shadow
+
+Accent: emerald green #22C55E
+
+Dramatic rim lighting on cards
+
+Subtle film grain overlay
+
+High-contrast minimalism
+
+Typography
+
+Zayan Luxury Font
+
+Oversized headings only:
+
+64–96px for key numbers
+
+32–40px for section headers
+
+MASCOT SYSTEM (MANDATORY)
+
+Mascot name: NOVA
+
+Floating glowing paper-orb
+
+Soft eye-like highlights
+
+Calm emotional expressions
+
+Gentle idle breathing animation
+
+Appears on every screen
+
+Gives 1-line guidance:
+
+“Let’s scan this.”
+
+“Tap here to export.”
+
+Mascot is:
+
+App icon
+
+Logo
+
+Splash screen
+
+Favicon
+
+CORE FEATURES
+
+One-tap scan
+
+Auto edge detection
+
+Perspective correction
+
+Filters: Clean, B&W, Soft Color, Original
+
+Multi-page PDF
+
+Convert to:
+PDF, Word, Excel, JPG, TXT
+
+OCR text extraction
+
+Password-protected PDFs
+
+Signature tool
+
+Share to email, cloud, contacts
+
+Looping onboarding preview videos
+
+SCREENS
+
+Splash
+
+Mascot floats in
+
+Light haptic
+
+Scan
+
+Live camera
+
+Auto capture
+
+Strong shutter haptic
+
+Edit
+
+Glass tool rail
+
+Contextual tools only
+
+Export (LOCKED)
+
+Format cards
+
+Blurred premium actions
+
+Paywall
+
+Full glass modal
+
+RevenueCat checkout
+
+MONETISATION
+
+RevenueCat entitlement: pro_access
+
+Products:
+
+Monthly $9.99 (7-day trial)
+
+Annual $39.99
+
+Locks:
+
+OCR
+
+Word / Excel export
+
+Password protection
+
+Signature
+
+FILE STRUCTURE
+apps/mobile
+ ├─ assets/mascot
+ ├─ components/glass
+ ├─ components/mascot
+ ├─ navigation
+ ├─ screens
+ ├─ services/revenuecat
+ ├─ store
+ ├─ theme
