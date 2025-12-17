@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
@@ -26,6 +27,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { NovaMascot } from "@/components/NovaMascot";
 import { Button } from "@/components/Button";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { apiRequest } from "@/lib/query-client";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -34,6 +36,7 @@ export default function ScanScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const navigation = useNavigation<NavigationProp>();
   const theme = Colors.dark;
+  const queryClient = useQueryClient();
 
   const [permission, requestPermission] = useCameraPermissions();
   const [isCapturing, setIsCapturing] = useState(false);
@@ -41,6 +44,21 @@ export default function ScanScreen() {
   const cameraRef = useRef<CameraView>(null);
   const captureScale = useSharedValue(1);
   const flashOpacity = useSharedValue(0);
+
+  const createDocumentMutation = useMutation({
+    mutationFn: async (imageUri: string) => {
+      const res = await apiRequest("POST", "/api/documents", {
+        title: "Untitled Document",
+        imageUri,
+        pageCount: 1,
+        filter: "clean",
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
+    },
+  });
 
   const captureAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: captureScale.value }],
@@ -60,10 +78,19 @@ export default function ScanScreen() {
     });
 
     if (!result.canceled && result.assets[0]) {
-      navigation.navigate("Edit", {
-        documentId: `doc-${Date.now()}`,
-        imageUri: result.assets[0].uri,
-      });
+      const imageUri = result.assets[0].uri;
+      try {
+        const doc = await createDocumentMutation.mutateAsync(imageUri);
+        navigation.navigate("Edit", {
+          documentId: doc.id,
+          imageUri: doc.imageUri,
+        });
+      } catch {
+        navigation.navigate("Edit", {
+          documentId: `doc-${Date.now()}`,
+          imageUri,
+        });
+      }
     }
   };
 
@@ -91,14 +118,27 @@ export default function ScanScreen() {
 
     try {
       const photo = await cameraRef.current.takePictureAsync();
-      setTimeout(() => {
-        setIsCapturing(false);
-        navigation.navigate("Edit", { 
-          documentId: `doc-${Date.now()}`,
-          imageUri: photo.uri,
-        });
-      }, 300);
-    } catch (error) {
+      const imageUri = photo.uri;
+      
+      try {
+        const doc = await createDocumentMutation.mutateAsync(imageUri);
+        setTimeout(() => {
+          setIsCapturing(false);
+          navigation.navigate("Edit", { 
+            documentId: doc.id,
+            imageUri: doc.imageUri,
+          });
+        }, 300);
+      } catch {
+        setTimeout(() => {
+          setIsCapturing(false);
+          navigation.navigate("Edit", { 
+            documentId: `doc-${Date.now()}`,
+            imageUri,
+          });
+        }, 300);
+      }
+    } catch {
       setIsCapturing(false);
     }
   };

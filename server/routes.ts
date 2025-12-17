@@ -40,7 +40,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/documents/:id", async (req, res) => {
     try {
-      const doc = await storage.updateDocument(req.params.id, req.body);
+      const { title, filter, pageCount } = req.body;
+      const updateData: { title?: string; filter?: string; pageCount?: number } = {};
+      
+      if (title !== undefined && typeof title === "string") {
+        updateData.title = title;
+      }
+      if (filter !== undefined && typeof filter === "string") {
+        updateData.filter = filter;
+      }
+      if (pageCount !== undefined && typeof pageCount === "number") {
+        updateData.pageCount = pageCount;
+      }
+      
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ error: "No valid fields to update" });
+      }
+      
+      const doc = await storage.updateDocument(req.params.id, updateData);
       if (!doc) {
         return res.status(404).json({ error: "Document not found" });
       }

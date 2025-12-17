@@ -42,17 +42,6 @@ export default function EditScreen() {
 
   const { data: document } = useQuery<Document>({
     queryKey: ["/api/documents", route.params.documentId],
-    enabled: !route.params.documentId.startsWith("doc-"),
-  });
-
-  const createMutation = useMutation({
-    mutationFn: async (data: { title: string; imageUri: string; filter: string; pageCount: number }) => {
-      const res = await apiRequest("POST", "/api/documents", data);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
-    },
   });
 
   const updateMutation = useMutation({
@@ -102,31 +91,10 @@ export default function EditScreen() {
 
   const handleExport = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
-    if (route.params.documentId.startsWith("doc-") && route.params.imageUri) {
-      try {
-        const newDoc = await createMutation.mutateAsync({
-          title,
-          imageUri: route.params.imageUri,
-          filter: selectedFilter,
-          pageCount: pages.length,
-        });
-        navigation.navigate("Export", { 
-          documentId: newDoc.id,
-          imageUri: route.params.imageUri,
-        });
-      } catch {
-        navigation.navigate("Export", { 
-          documentId: route.params.documentId,
-          imageUri: route.params.imageUri,
-        });
-      }
-    } else {
-      navigation.navigate("Export", { 
-        documentId: route.params.documentId,
-        imageUri: route.params.imageUri,
-      });
-    }
+    navigation.navigate("Export", { 
+      documentId: route.params.documentId,
+      imageUri: route.params.imageUri,
+    });
   };
 
   const handleDelete = () => {
@@ -366,7 +334,7 @@ export default function EditScreen() {
             onPress={handleExport} 
             style={styles.exportButton}
           >
-            {route.params.documentId.startsWith("doc-") ? "Save & Export" : "Export Document"}
+            Export Document
           </Button>
         </View>
       </View>
