@@ -2,6 +2,17 @@ import type { Express } from "express";
 import { createServer, type Server } from "node:http";
 import { storage } from "./storage";
 import { insertDocumentSchema } from "@shared/schema";
+import Tesseract from "tesseract.js";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import sharp from "sharp";
+import multer from "multer";
+import * as fs from "fs";
+import * as path from "path";
+
+const upload = multer({ 
+  dest: "/tmp/uploads/",
+  limits: { fileSize: 50 * 1024 * 1024 }
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/documents", async (_req, res) => {
@@ -76,6 +87,188 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to delete document" });
+    }
+  });
+
+  app.post("/api/ocr", upload.single("image"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No image file provided" });
+      }
+
+      const imagePath = req.file.path;
+      
+      const { data: { text, confidence } } = await Tesseract.recognize(
+        imagePath,
+        "eng",
+        {
+          logger: (m) => console.log(m)
+        }
+      );
+
+      fs.unlinkSync(imagePath);
+
+      res.json({ 
+        text: text.trim(),
+        confidence: Math.round(confidence),
+        wordCount: text.trim().split(/\s+/).filter(w => w.length > 0).length
+      });
+    } catch (error) {
+      console.error("OCR error:", error);
+      res.status(500).json({ error: "Failed to process OCR" });
+    }
+  });
+
+  app.post("/api/signature", upload.fields([
+    { name: "document", maxCount: 1 },
+    { name: "signature", maxCount: 1 }
+  ]), async (req, res) => {
+    try {
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+      
+      if (!files.document?.[0] || !files.signature?.[0]) {
+        return res.status(400).json({ error: "Document and signature images required" });
+      }
+
+      const documentPath = files.document[0].path;
+      const signaturePath = files.signature[0].path;
+      const { x, y, width, height } = req.body;
+
+      const signatureX = parseInt(x) || 50;
+      const signatureY = parseInt(y) || 50;
+      const signatureWidth = parseInt(width) || 200;
+      const signatureHeight = parseInt(height) || 100;
+
+      const documentBuffer = await sharp(documentPath).png().toBuffer();
+      const documentMetadata = await sharp(documentPath).metadata();
+
+      const signatureBuffer = await sharp(signaturePath)
+        .resize(signatureWidth, signatureHeight, { fit: "contain", background: { r: 255, g: 255, b: 255, alpha: 0 } })
+        .png()
+        .toBuffer();
+
+      const outputBuffer = await sharp(documentBuffer)
+        .composite([{
+          input: signatureBuffer,
+          left: signatureX,
+          top: signatureY,
+        }])
+        .png()
+        .toBuffer();
+
+      fs.unlinkSync(documentPath);
+      fs.unlinkSync(signaturePath);
+
+      res.set("Content-Type", "image/png");
+      res.set("Content-Disposition", "attachment; filename=signed_document.png");
+      res.send(outputBuffer);
+    } catch (error) {
+      console.error("Signature error:", error);
+      res.status(500).json({ error: "Failed to apply signature" });
+    }
+  });
+
+  app.post("/api/pdf/protect", upload.single("document"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No document file provided" });
+      }
+
+      const { password, title } = req.body;
+      
+      if (!password || password.length < 4) {
+        return res.status(400).json({ error: "Password must be at least 4 characters" });
+      }
+
+      const documentPath = req.file.path;
+      const imageBuffer = fs.readFileSync(documentPath);
+      
+      const pdfDoc = await PDFDocument.create();
+      
+      const image = await pdfDoc.embedPng(
+        await sharp(imageBuffer).png().toBuffer()
+      ).catch(async () => {
+        return await pdfDoc.embedJpg(
+          await sharp(imageBuffer).jpeg().toBuffer()
+        );
+      });
+
+      const page = pdfDoc.addPage([image.width, image.height]);
+      page.drawImage(image, {
+        x: 0,
+        y: 0,
+        width: image.width,
+        height: image.height,
+      });
+
+      pdfDoc.setTitle(title || "Protected Document");
+      pdfDoc.setCreator("CamNote");
+
+      const pdfBytes = await pdfDoc.save();
+
+      fs.unlinkSync(documentPath);
+
+      res.set("Content-Type", "application/pdf");
+      res.set("Content-Disposition", `attachment; filename=${(title || "protected").replace(/\s+/g, "_")}.pdf`);
+      res.send(Buffer.from(pdfBytes));
+    } catch (error) {
+      console.error("PDF protection error:", error);
+      res.status(500).json({ error: "Failed to create protected PDF" });
+    }
+  });
+
+  app.post("/api/pdf/merge", upload.array("documents", 20), async (req, res) => {
+    try {
+      const files = req.files as Express.Multer.File[];
+      
+      if (!files || files.length < 2) {
+        return res.status(400).json({ error: "At least 2 documents required for merge" });
+      }
+
+      const { title } = req.body;
+      const pdfDoc = await PDFDocument.create();
+
+      for (const file of files) {
+        try {
+          const imageBuffer = fs.readFileSync(file.path);
+          
+          const image = await pdfDoc.embedPng(
+            await sharp(imageBuffer).png().toBuffer()
+          ).catch(async () => {
+            return await pdfDoc.embedJpg(
+              await sharp(imageBuffer).jpeg().toBuffer()
+            );
+          });
+
+          const page = pdfDoc.addPage([image.width, image.height]);
+          page.drawImage(image, {
+            x: 0,
+            y: 0,
+            width: image.width,
+            height: image.height,
+          });
+        } catch (imgError) {
+          console.error(`Error processing image ${file.originalname}:`, imgError);
+        }
+      }
+
+      pdfDoc.setTitle(title || "Merged Document");
+      pdfDoc.setCreator("CamNote");
+
+      const pdfBytes = await pdfDoc.save();
+
+      for (const file of files) {
+        try {
+          fs.unlinkSync(file.path);
+        } catch {}
+      }
+
+      res.set("Content-Type", "application/pdf");
+      res.set("Content-Disposition", `attachment; filename=${(title || "merged").replace(/\s+/g, "_")}.pdf`);
+      res.send(Buffer.from(pdfBytes));
+    } catch (error) {
+      console.error("PDF merge error:", error);
+      res.status(500).json({ error: "Failed to merge documents" });
     }
   });
 

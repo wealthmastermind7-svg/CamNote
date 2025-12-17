@@ -7,6 +7,10 @@ import PaywallScreen from "@/screens/PaywallScreen";
 import SettingsScreen from "@/screens/SettingsScreen";
 import HelpScreen from "@/screens/HelpScreen";
 import CustomerCenterScreen from "@/screens/CustomerCenterScreen";
+import OCRScreen from "@/screens/OCRScreen";
+import SignatureScreen from "@/screens/SignatureScreen";
+import PasswordProtectScreen from "@/screens/PasswordProtectScreen";
+import MergeScreen from "@/screens/MergeScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { Colors } from "@/constants/theme";
 
@@ -18,6 +22,10 @@ export type RootStackParamList = {
   Settings: undefined;
   Help: undefined;
   CustomerCenter: undefined;
+  OCR: { imageUri?: string } | undefined;
+  Signature: { imageUri?: string } | undefined;
+  PasswordProtect: { imageUri?: string } | undefined;
+  Merge: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -83,6 +91,38 @@ export default function RootStackNavigator() {
         component={CustomerCenterScreen}
         options={{
           headerTitle: "Subscription",
+          headerTintColor: theme.text,
+        }}
+      />
+      <Stack.Screen
+        name="OCR"
+        component={OCRScreen}
+        options={{
+          headerTitle: "OCR Text Extraction",
+          headerTintColor: theme.text,
+        }}
+      />
+      <Stack.Screen
+        name="Signature"
+        component={SignatureScreen}
+        options={{
+          headerTitle: "Digital Signature",
+          headerTintColor: theme.text,
+        }}
+      />
+      <Stack.Screen
+        name="PasswordProtect"
+        component={PasswordProtectScreen}
+        options={{
+          headerTitle: "Password Protection",
+          headerTintColor: theme.text,
+        }}
+      />
+      <Stack.Screen
+        name="Merge"
+        component={MergeScreen}
+        options={{
+          headerTitle: "Merge Documents",
           headerTintColor: theme.text,
         }}
       />

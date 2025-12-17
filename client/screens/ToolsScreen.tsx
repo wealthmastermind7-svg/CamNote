@@ -28,12 +28,16 @@ export default function ToolsScreen() {
     } else {
       switch (toolName) {
         case "ocr":
+          navigation.navigate("OCR");
+          break;
         case "signature":
+          navigation.navigate("Signature");
+          break;
         case "password":
-          // Pro features - now unlocked
+          navigation.navigate("PasswordProtect");
           break;
         case "merge":
-          // Merge Documents - placeholder
+          navigation.navigate("Merge");
           break;
         case "quality":
           navigation.navigate("Settings");
