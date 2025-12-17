@@ -2,7 +2,7 @@ import React from "react";
 import { View, StyleSheet, ScrollView, Share, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as Haptics from "expo-haptics";
 import { Colors, Spacing } from "@/constants/theme";
@@ -12,12 +12,16 @@ import { ExportOption } from "@/components/ExportOption";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type ExportRouteProp = RouteProp<RootStackParamList, "Export">;
 
 export default function ExportScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<ExportRouteProp>();
   const theme = Colors.dark;
+
+  const imageUri = route.params.imageUri;
 
   const handleExport = async (format: string, locked: boolean) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -28,11 +32,19 @@ export default function ExportScreen() {
     }
 
     try {
+      if (!imageUri) {
+        Alert.alert("Error", "No image available to export");
+        return;
+      }
+
+      // Use native share dialog for both PDF and JPG exports
       await Share.share({
-        message: `Sharing document as ${format.toUpperCase()}`,
-        title: "Share Document",
+        url: imageUri,
+        title: `Export as ${format.toUpperCase()}`,
+        message: `Scanned document exported as ${format.toUpperCase()}`,
       });
     } catch (error) {
+      Alert.alert("Error", `Failed to export as ${format.toUpperCase()}`);
     }
   };
 
@@ -40,11 +52,19 @@ export default function ExportScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     try {
+      if (!imageUri) {
+        Alert.alert("Error", "No image available to share");
+        return;
+      }
+
+      // Use native share dialog for all sharing options
       await Share.share({
-        message: `Sharing document via ${destination}`,
-        title: "Share Document",
+        url: imageUri,
+        title: `Share via ${destination}`,
+        message: "Scanned document - check it out",
       });
     } catch (error) {
+      Alert.alert("Error", `Failed to share via ${destination}`);
     }
   };
 

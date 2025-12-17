@@ -46,7 +46,10 @@ export default function EditScreen() {
 
   const handleExport = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    navigation.navigate("Export", { documentId: route.params.documentId });
+    navigation.navigate("Export", { 
+      documentId: route.params.documentId,
+      imageUri: route.params.imageUri,
+    });
   };
 
   const handleToolPress = (tool: string) => {

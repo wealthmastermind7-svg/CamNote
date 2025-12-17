@@ -10,7 +10,7 @@ import { Colors } from "@/constants/theme";
 export type RootStackParamList = {
   Main: undefined;
   Edit: { documentId: string; imageUri?: string };
-  Export: { documentId: string };
+  Export: { documentId: string; imageUri?: string };
   Paywall: undefined;
 };
 
