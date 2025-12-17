@@ -10,6 +10,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { NovaMascot } from "@/components/NovaMascot";
 import { ToolItem } from "@/components/ToolItem";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { useIsProUser } from "@/lib/revenuecat";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -18,13 +19,19 @@ export default function ToolsScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const navigation = useNavigation<NavigationProp>();
   const theme = Colors.dark;
+  const isProUser = useIsProUser();
 
   const handleToolPress = (toolName: string, locked: boolean) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (locked) {
+    if (locked && !isProUser) {
       navigation.navigate("Paywall");
     } else {
       switch (toolName) {
+        case "ocr":
+        case "signature":
+        case "password":
+          // Pro features - now unlocked
+          break;
         case "merge":
           // Merge Documents - placeholder
           break;
@@ -36,6 +43,9 @@ export default function ToolsScreen() {
           break;
         case "help":
           navigation.navigate("Help");
+          break;
+        case "subscription":
+          navigation.navigate("CustomerCenter");
           break;
         default:
           break;
@@ -74,38 +84,59 @@ export default function ToolsScreen() {
           </ThemedText>
         </View>
 
-        <View
-          style={[
-            styles.promoCard,
-            { backgroundColor: theme.backgroundSecondary },
-          ]}
-        >
-          <View style={styles.promoContent}>
-            <ThemedText type="h3" style={styles.promoTitle}>
-              Unlock Pro
-            </ThemedText>
-            <ThemedText
-              type="small"
-              style={[styles.promoText, { color: theme.textSecondary }]}
-            >
-              Get OCR, signatures, and more
-            </ThemedText>
-          </View>
+        {!isProUser ? (
           <View
             style={[
-              styles.promoBadge,
-              { backgroundColor: theme.accentDim, borderColor: theme.accent },
+              styles.promoCard,
+              { backgroundColor: theme.backgroundSecondary },
             ]}
           >
-            <ThemedText
-              type="small"
-              style={[styles.promoBadgeText, { color: theme.accent }]}
-              onPress={handleUpgrade}
+            <View style={styles.promoContent}>
+              <ThemedText type="h3" style={styles.promoTitle}>
+                Unlock Pro
+              </ThemedText>
+              <ThemedText
+                type="small"
+                style={[styles.promoText, { color: theme.textSecondary }]}
+              >
+                Get OCR, signatures, and more
+              </ThemedText>
+            </View>
+            <View
+              style={[
+                styles.promoBadge,
+                { backgroundColor: theme.accentDim, borderColor: theme.accent },
+              ]}
             >
-              Upgrade
-            </ThemedText>
+              <ThemedText
+                type="small"
+                style={[styles.promoBadgeText, { color: theme.accent }]}
+                onPress={handleUpgrade}
+              >
+                Upgrade
+              </ThemedText>
+            </View>
           </View>
-        </View>
+        ) : (
+          <View
+            style={[
+              styles.promoCard,
+              { backgroundColor: theme.accentDim },
+            ]}
+          >
+            <View style={styles.promoContent}>
+              <ThemedText type="h3" style={[styles.promoTitle, { color: theme.accent }]}>
+                CamNote Pro
+              </ThemedText>
+              <ThemedText
+                type="small"
+                style={[styles.promoText, { color: theme.text }]}
+              >
+                All premium features unlocked
+              </ThemedText>
+            </View>
+          </View>
+        )}
 
         <View style={styles.section}>
           <ThemedText
@@ -119,24 +150,24 @@ export default function ToolsScreen() {
             icon="type"
             title="OCR Text Extraction"
             subtitle="Extract text from scanned documents"
-            locked={true}
-            onPress={() => handleToolPress("ocr", true)}
+            locked={!isProUser}
+            onPress={() => handleToolPress("ocr", !isProUser)}
           />
 
           <ToolItem
             icon="edit-3"
             title="Digital Signature"
             subtitle="Sign documents digitally"
-            locked={true}
-            onPress={() => handleToolPress("signature", true)}
+            locked={!isProUser}
+            onPress={() => handleToolPress("signature", !isProUser)}
           />
 
           <ToolItem
             icon="lock"
             title="Password Protection"
             subtitle="Secure PDFs with passwords"
-            locked={true}
-            onPress={() => handleToolPress("password", true)}
+            locked={!isProUser}
+            onPress={() => handleToolPress("password", !isProUser)}
           />
 
           <ToolItem
@@ -177,6 +208,14 @@ export default function ToolsScreen() {
             title="Help & Support"
             locked={false}
             onPress={() => handleToolPress("help", false)}
+          />
+
+          <ToolItem
+            icon="credit-card"
+            title="Manage Subscription"
+            subtitle={isProUser ? "Pro subscription active" : "View subscription options"}
+            locked={false}
+            onPress={() => handleToolPress("subscription", false)}
           />
         </View>
 

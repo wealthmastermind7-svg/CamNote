@@ -6,6 +6,7 @@ import ExportScreen from "@/screens/ExportScreen";
 import PaywallScreen from "@/screens/PaywallScreen";
 import SettingsScreen from "@/screens/SettingsScreen";
 import HelpScreen from "@/screens/HelpScreen";
+import CustomerCenterScreen from "@/screens/CustomerCenterScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { Colors } from "@/constants/theme";
 
@@ -16,6 +17,7 @@ export type RootStackParamList = {
   Paywall: undefined;
   Settings: undefined;
   Help: undefined;
+  CustomerCenter: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -73,6 +75,14 @@ export default function RootStackNavigator() {
         component={HelpScreen}
         options={{
           headerTitle: "Help & Support",
+          headerTintColor: theme.text,
+        }}
+      />
+      <Stack.Screen
+        name="CustomerCenter"
+        component={CustomerCenterScreen}
+        options={{
+          headerTitle: "Subscription",
           headerTintColor: theme.text,
         }}
       />

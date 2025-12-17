@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -6,20 +6,23 @@ import {
   Pressable,
   Switch,
   Platform,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import { Feather } from "@expo/vector-icons";
-import { Colors, Spacing, BorderRadius, Typography } from "@/constants/theme";
+import { PurchasesPackage } from "react-native-purchases";
+import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { ThemedText } from "@/components/ThemedText";
 import { NovaMascot } from "@/components/NovaMascot";
 import { PricingCard } from "@/components/PricingCard";
 import { FeatureItem } from "@/components/FeatureItem";
 import { Button } from "@/components/Button";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { useRevenueCat } from "@/lib/revenuecat";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -28,8 +31,27 @@ export default function PaywallScreen() {
   const navigation = useNavigation<NavigationProp>();
   const theme = Colors.dark;
 
+  const {
+    currentOffering,
+    isLoading,
+    purchasePackage,
+    restorePurchases,
+    isProUser,
+  } = useRevenueCat();
+
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "annual">("annual");
   const [trialEnabled, setTrialEnabled] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+
+  const monthlyPackage = currentOffering?.monthly;
+  const annualPackage = currentOffering?.annual;
+
+  useEffect(() => {
+    if (isProUser) {
+      navigation.goBack();
+    }
+  }, [isProUser, navigation]);
 
   const handleClose = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -46,14 +68,91 @@ export default function PaywallScreen() {
     setTrialEnabled(value);
   };
 
-  const handleContinue = () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    navigation.goBack();
+  const handleContinue = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    const selectedPackage =
+      selectedPlan === "annual" ? annualPackage : monthlyPackage;
+
+    if (!selectedPackage) {
+      if (Platform.OS === "web") {
+        Alert.alert(
+          "Not Available",
+          "In-app purchases are only available in the mobile app. Please use Expo Go on your device to subscribe."
+        );
+      } else {
+        Alert.alert("Error", "Selected plan is not available. Please try again.");
+      }
+      return;
+    }
+
+    setIsPurchasing(true);
+    try {
+      const success = await purchasePackage(selectedPackage);
+      if (success) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        navigation.goBack();
+      }
+    } finally {
+      setIsPurchasing(false);
+    }
   };
 
-  const handleRestore = () => {
+  const handleRestore = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setIsRestoring(true);
+
+    try {
+      const success = await restorePurchases();
+      if (success) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Alert.alert("Success", "Your purchase has been restored!");
+        navigation.goBack();
+      } else {
+        Alert.alert(
+          "No Purchases Found",
+          "We couldn't find any previous purchases to restore."
+        );
+      }
+    } finally {
+      setIsRestoring(false);
+    }
   };
+
+  const getMonthlyPrice = () => {
+    if (monthlyPackage?.product.priceString) {
+      return monthlyPackage.product.priceString;
+    }
+    return "$9.99";
+  };
+
+  const getAnnualPrice = () => {
+    if (annualPackage?.product.priceString) {
+      return annualPackage.product.priceString;
+    }
+    return "$39.99";
+  };
+
+  const getAnnualSavings = () => {
+    if (monthlyPackage?.product.price && annualPackage?.product.price) {
+      const monthlyTotal = monthlyPackage.product.price * 12;
+      const annualPrice = annualPackage.product.price;
+      const savings = Math.round(((monthlyTotal - annualPrice) / monthlyTotal) * 100);
+      return `SAVE ${savings}%`;
+    }
+    return "SAVE 67%";
+  };
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer, { backgroundColor: theme.backgroundRoot }]}>
+        <ActivityIndicator size="large" color={theme.accent} />
+        <ThemedText type="body" style={{ marginTop: Spacing.lg, color: theme.textSecondary }}>
+          Loading plans...
+        </ThemedText>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
@@ -116,10 +215,10 @@ export default function PaywallScreen() {
         <View style={styles.plans}>
           <PricingCard
             title="Yearly Plan"
-            price="$39.99"
+            price={getAnnualPrice()}
             period="/year"
-            originalPrice="$119.88"
-            savings="SAVE 67%"
+            originalPrice={monthlyPackage ? `${monthlyPackage.product.priceString} x 12` : "$119.88"}
+            savings={getAnnualSavings()}
             selected={selectedPlan === "annual"}
             onPress={() => handlePlanSelect("annual")}
             trialEnabled={trialEnabled}
@@ -127,7 +226,7 @@ export default function PaywallScreen() {
 
           <PricingCard
             title="Monthly Plan"
-            price="$9.99"
+            price={getMonthlyPrice()}
             period="/month"
             selected={selectedPlan === "monthly"}
             onPress={() => handlePlanSelect("monthly")}
@@ -135,17 +234,27 @@ export default function PaywallScreen() {
           />
         </View>
 
-        <Button onPress={handleContinue} style={styles.continueButton}>
-          {trialEnabled ? "Start 7-Day Free Trial" : "Continue"}
+        <Button
+          onPress={handleContinue}
+          style={styles.continueButton}
+          disabled={isPurchasing || isRestoring}
+        >
+          {isPurchasing ? (
+            <ActivityIndicator size="small" color={theme.buttonText} />
+          ) : trialEnabled ? (
+            "Start 7-Day Free Trial"
+          ) : (
+            "Continue"
+          )}
         </Button>
 
         <View style={styles.footer}>
-          <Pressable onPress={handleRestore}>
+          <Pressable onPress={handleRestore} disabled={isRestoring}>
             <ThemedText
               type="small"
               style={[styles.footerLink, { color: theme.textSecondary }]}
             >
-              Restore Purchase
+              {isRestoring ? "Restoring..." : "Restore Purchase"}
             </ThemedText>
           </Pressable>
           <ThemedText
@@ -196,6 +305,10 @@ export default function PaywallScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    justifyContent: "center",
+    alignItems: "center",
   },
   scrollView: {
     flex: 1,
