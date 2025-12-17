@@ -54,7 +54,7 @@ export default function ScanScreen() {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: [ImagePicker.MediaType.IMAGE],
+      mediaTypes: ["images"],
       allowsEditing: false,
       quality: 1,
     });
@@ -73,7 +73,7 @@ export default function ScanScreen() {
   };
 
   const handleCapture = async () => {
-    if (isCapturing) return;
+    if (isCapturing || !cameraRef.current) return;
 
     setIsCapturing(true);
 
@@ -89,10 +89,18 @@ export default function ScanScreen() {
 
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
-    setTimeout(() => {
+    try {
+      const photo = await cameraRef.current.takePictureAsync();
+      setTimeout(() => {
+        setIsCapturing(false);
+        navigation.navigate("Edit", { 
+          documentId: `doc-${Date.now()}`,
+          imageUri: photo.uri,
+        });
+      }, 300);
+    } catch (error) {
       setIsCapturing(false);
-      navigation.navigate("Edit", { documentId: `doc-${Date.now()}` });
-    }, 300);
+    }
   };
 
   if (!permission) {
