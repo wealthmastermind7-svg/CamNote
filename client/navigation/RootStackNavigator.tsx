@@ -4,6 +4,8 @@ import MainTabNavigator from "@/navigation/MainTabNavigator";
 import EditScreen from "@/screens/EditScreen";
 import ExportScreen from "@/screens/ExportScreen";
 import PaywallScreen from "@/screens/PaywallScreen";
+import SettingsScreen from "@/screens/SettingsScreen";
+import HelpScreen from "@/screens/HelpScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { Colors } from "@/constants/theme";
 
@@ -12,6 +14,8 @@ export type RootStackParamList = {
   Edit: { documentId: string; imageUri?: string };
   Export: { documentId: string; imageUri?: string };
   Paywall: undefined;
+  Settings: undefined;
+  Help: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -54,6 +58,22 @@ export default function RootStackNavigator() {
         options={{
           presentation: "modal",
           headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{
+          headerTitle: "Settings",
+          headerTintColor: theme.text,
+        }}
+      />
+      <Stack.Screen
+        name="Help"
+        component={HelpScreen}
+        options={{
+          headerTitle: "Help & Support",
+          headerTintColor: theme.text,
         }}
       />
     </Stack.Navigator>

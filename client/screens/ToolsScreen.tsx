@@ -23,6 +23,23 @@ export default function ToolsScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (locked) {
       navigation.navigate("Paywall");
+    } else {
+      switch (toolName) {
+        case "merge":
+          // Merge Documents - placeholder
+          break;
+        case "quality":
+          navigation.navigate("Settings");
+          break;
+        case "cloud":
+          navigation.navigate("Settings");
+          break;
+        case "help":
+          navigation.navigate("Help");
+          break;
+        default:
+          break;
+      }
     }
   };
 
