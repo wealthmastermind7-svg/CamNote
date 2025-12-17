@@ -12,7 +12,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.camnote.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "CamNote needs camera access to scan your documents"
+        "NSCameraUsageDescription": "This app uses the camera to capture photos of your documents so you can scan and digitize them. Photos are processed within the app and are not shared with third parties. You control which photos are saved.",
+        "NSPhotoLibraryUsageDescription": "This app allows you to select photos from your photo library to scan and digitize as documents. Selected photos are used only within the app to create digital records and are not shared.",
+        "NSPhotoLibraryAddUsageDescription": "This app allows you to save scanned documents and exported images to your photo library for personal reference and backup. Images are saved only when you explicitly choose to do so."
       }
     },
     "android": {
@@ -44,7 +46,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "CamNote needs camera access to scan your documents"
+          "cameraPermission": "This app uses the camera to capture photos of your documents so you can scan and digitize them. Photos are processed within the app and are not shared with third parties. You control which photos are saved."
         }
       ],
       "expo-web-browser"
