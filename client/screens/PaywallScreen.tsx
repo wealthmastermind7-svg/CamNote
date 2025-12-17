@@ -8,6 +8,7 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  Linking,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -264,7 +265,7 @@ export default function PaywallScreen() {
             {" "}
             |{" "}
           </ThemedText>
-          <Pressable>
+          <Pressable onPress={() => Linking.openURL("https://luxeweb.cerolauto.store/CamNote/terms")}>
             <ThemedText
               type="small"
               style={[styles.footerLink, { color: theme.textSecondary }]}
@@ -279,7 +280,7 @@ export default function PaywallScreen() {
             {" "}
             |{" "}
           </ThemedText>
-          <Pressable>
+          <Pressable onPress={() => Linking.openURL("https://luxeweb.cerolauto.store/CamNote/privacy-policy")}>
             <ThemedText
               type="small"
               style={[styles.footerLink, { color: theme.textSecondary }]}
