@@ -54,13 +54,16 @@ export default function ScanScreen() {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: [ImagePicker.MediaType.IMAGE],
       allowsEditing: false,
       quality: 1,
     });
 
     if (!result.canceled && result.assets[0]) {
-      navigation.navigate("Edit", { documentId: `doc-${Date.now()}` });
+      navigation.navigate("Edit", {
+        documentId: `doc-${Date.now()}`,
+        imageUri: result.assets[0].uri,
+      });
     }
   };
 

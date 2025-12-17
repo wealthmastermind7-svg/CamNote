@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, StyleSheet, ScrollView, Pressable, Platform } from "react-native";
+import { View, StyleSheet, ScrollView, Pressable, Platform, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -84,21 +84,37 @@ export default function EditScreen() {
             { backgroundColor: theme.backgroundSecondary },
           ]}
         >
-          <View style={styles.documentPlaceholder}>
-            <Feather name="file-text" size={64} color={theme.textSecondary} />
-            <ThemedText
-              type="small"
-              style={[styles.placeholderText, { color: theme.textSecondary }]}
-            >
-              Document Preview
-            </ThemedText>
-            <ThemedText
-              type="caption"
-              style={[styles.filterLabel, { color: theme.accent }]}
-            >
-              Filter: {filters.find((f) => f.id === selectedFilter)?.label}
-            </ThemedText>
-          </View>
+          {route.params.imageUri ? (
+            <View style={styles.documentPlaceholder}>
+              <Image
+                source={{ uri: route.params.imageUri }}
+                style={StyleSheet.absoluteFillObject}
+              />
+              <View style={styles.documentOverlay} />
+              <ThemedText
+                type="caption"
+                style={[styles.filterLabel, { color: theme.accent }]}
+              >
+                Filter: {filters.find((f) => f.id === selectedFilter)?.label}
+              </ThemedText>
+            </View>
+          ) : (
+            <View style={styles.documentPlaceholder}>
+              <Feather name="file-text" size={64} color={theme.textSecondary} />
+              <ThemedText
+                type="small"
+                style={[styles.placeholderText, { color: theme.textSecondary }]}
+              >
+                Document Preview
+              </ThemedText>
+              <ThemedText
+                type="caption"
+                style={[styles.filterLabel, { color: theme.accent }]}
+              >
+                Filter: {filters.find((f) => f.id === selectedFilter)?.label}
+              </ThemedText>
+            </View>
+          )}
         </View>
 
         <View style={styles.pageIndicator}>
@@ -249,6 +265,10 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+  },
+  documentOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.1)",
   },
   placeholderText: {
     marginTop: Spacing.lg,
