@@ -11,6 +11,7 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { CameraView, useCameraPermissions } from "expo-camera";
+import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
 import { Feather } from "@expo/vector-icons";
 import Animated, {
@@ -36,6 +37,7 @@ export default function ScanScreen() {
 
   const [permission, requestPermission] = useCameraPermissions();
   const [isCapturing, setIsCapturing] = useState(false);
+  const [flashEnabled, setFlashEnabled] = useState(false);
   const cameraRef = useRef<CameraView>(null);
   const captureScale = useSharedValue(1);
   const flashOpacity = useSharedValue(0);
@@ -47,6 +49,25 @@ export default function ScanScreen() {
   const flashAnimatedStyle = useAnimatedStyle(() => ({
     opacity: flashOpacity.value,
   }));
+
+  const handleGalleryPress = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      navigation.navigate("Edit", { documentId: `doc-${Date.now()}` });
+    }
+  };
+
+  const handleFlashToggle = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setFlashEnabled(!flashEnabled);
+  };
 
   const handleCapture = async () => {
     if (isCapturing) return;
@@ -207,6 +228,7 @@ export default function ScanScreen() {
         ref={cameraRef}
         style={StyleSheet.absoluteFill}
         facing="back"
+        flash={flashEnabled ? "on" : "off"}
       />
 
       <Animated.View
@@ -241,7 +263,7 @@ export default function ScanScreen() {
         <View style={styles.bottomControls}>
           <Pressable
             style={styles.galleryButton}
-            onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+            onPress={handleGalleryPress}
           >
             <View
               style={[
@@ -273,7 +295,7 @@ export default function ScanScreen() {
 
           <Pressable
             style={styles.flashButton}
-            onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+            onPress={handleFlashToggle}
           >
             <View
               style={[
@@ -281,7 +303,11 @@ export default function ScanScreen() {
                 { backgroundColor: theme.backgroundSecondary },
               ]}
             >
-              <Feather name="zap-off" size={24} color={theme.text} />
+              <Feather
+                name={flashEnabled ? "zap" : "zap-off"}
+                size={24}
+                color={flashEnabled ? theme.accent : theme.text}
+              />
             </View>
           </Pressable>
         </View>
