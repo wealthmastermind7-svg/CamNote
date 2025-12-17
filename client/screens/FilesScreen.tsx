@@ -1,32 +1,29 @@
-import React, { useState } from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+import React from "react";
+import { View, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useQuery } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
-import { Colors, Spacing, Typography } from "@/constants/theme";
+import { Colors, Spacing } from "@/constants/theme";
 import { ThemedText } from "@/components/ThemedText";
 import { NovaMascot } from "@/components/NovaMascot";
 import { DocumentCard } from "@/components/DocumentCard";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import type { Document } from "@shared/schema";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-interface Document {
-  id: string;
-  title: string;
-  pageCount: number;
-  date: string;
+function formatDate(date: Date): string {
+  const now = new Date();
+  const docDate = new Date(date);
+  const diffDays = Math.floor((now.getTime() - docDate.getTime()) / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  return docDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
-
-const mockDocuments: Document[] = [
-  { id: "1", title: "Contract Agreement", pageCount: 4, date: "Today" },
-  { id: "2", title: "Meeting Notes", pageCount: 2, date: "Yesterday" },
-  { id: "3", title: "Receipt - Electronics", pageCount: 1, date: "Dec 14" },
-  { id: "4", title: "Insurance Document", pageCount: 6, date: "Dec 12" },
-  { id: "5", title: "Tax Form 2024", pageCount: 3, date: "Dec 10" },
-];
 
 export default function FilesScreen() {
   const insets = useSafeAreaInsets();
@@ -34,11 +31,15 @@ export default function FilesScreen() {
   const navigation = useNavigation<NavigationProp>();
   const theme = Colors.dark;
 
-  const [documents] = useState<Document[]>(mockDocuments);
+  const { data: documents = [], isLoading } = useQuery<Document[]>({
+    queryKey: ["/api/documents"],
+    refetchOnMount: true,
+    staleTime: 0,
+  });
 
   const handleDocumentPress = (doc: Document) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate("Edit", { documentId: doc.id });
+    navigation.navigate("Edit", { documentId: doc.id, imageUri: doc.imageUri });
   };
 
   const totalPages = documents.reduce((sum, doc) => sum + doc.pageCount, 0);
@@ -114,15 +115,28 @@ export default function FilesScreen() {
           >
             RECENT
           </ThemedText>
-          {documents.map((doc) => (
-            <DocumentCard
-              key={doc.id}
-              title={doc.title}
-              pageCount={doc.pageCount}
-              date={doc.date}
-              onPress={() => handleDocumentPress(doc)}
-            />
-          ))}
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={theme.accent} />
+              <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: Spacing.md }}>
+                Loading documents...
+              </ThemedText>
+            </View>
+          ) : documents.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <NovaMascot message="No documents yet. Scan your first document!" size="medium" />
+            </View>
+          ) : (
+            documents.map((doc) => (
+              <DocumentCard
+                key={doc.id}
+                title={doc.title}
+                pageCount={doc.pageCount}
+                date={formatDate(doc.createdAt)}
+                onPress={() => handleDocumentPress(doc)}
+              />
+            ))
+          )}
         </View>
       </ScrollView>
     </View>
@@ -177,5 +191,13 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     marginBottom: Spacing.lg,
     fontWeight: "600",
+  },
+  loadingContainer: {
+    alignItems: "center",
+    paddingVertical: Spacing["3xl"],
+  },
+  emptyContainer: {
+    alignItems: "center",
+    paddingVertical: Spacing.xl,
   },
 });

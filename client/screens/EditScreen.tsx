@@ -1,9 +1,10 @@
-import React, { useState } from "react";
-import { View, StyleSheet, ScrollView, Pressable, Platform, Image } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, StyleSheet, ScrollView, Pressable, Platform, Image, TextInput, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import { Feather } from "@expo/vector-icons";
@@ -13,6 +14,8 @@ import { NovaMascot } from "@/components/NovaMascot";
 import { FilterButton } from "@/components/FilterButton";
 import { Button } from "@/components/Button";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { apiRequest } from "@/lib/query-client";
+import type { Document } from "@shared/schema";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type EditRouteProp = RouteProp<RootStackParamList, "Edit">;
@@ -30,31 +33,135 @@ export default function EditScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<EditRouteProp>();
   const theme = Colors.dark;
+  const queryClient = useQueryClient();
 
   const [selectedFilter, setSelectedFilter] = useState("clean");
   const [pages, setPages] = useState([1]);
+  const [title, setTitle] = useState("Untitled Document");
+  const [isEditing, setIsEditing] = useState(false);
 
-  const handleFilterSelect = (filterId: string) => {
+  const { data: document } = useQuery<Document>({
+    queryKey: ["/api/documents", route.params.documentId],
+    enabled: !route.params.documentId.startsWith("doc-"),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: { title: string; imageUri: string; filter: string; pageCount: number }) => {
+      const res = await apiRequest("POST", "/api/documents", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<{ title: string; filter: string; pageCount: number }> }) => {
+      const res = await apiRequest("PUT", `/api/documents/${id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/documents/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
+      navigation.goBack();
+    },
+  });
+
+  useEffect(() => {
+    if (document) {
+      setTitle(document.title);
+      setSelectedFilter(document.filter);
+      setPages(Array.from({ length: document.pageCount }, (_, i) => i + 1));
+    }
+  }, [document]);
+
+  const handleFilterSelect = async (filterId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedFilter(filterId);
+    if (document) {
+      updateMutation.mutate({ id: document.id, data: { filter: filterId } });
+    }
   };
 
   const handleAddPage = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setPages([...pages, pages.length + 1]);
+    const newPages = [...pages, pages.length + 1];
+    setPages(newPages);
+    if (document) {
+      updateMutation.mutate({ id: document.id, data: { pageCount: newPages.length } });
+    }
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    navigation.navigate("Export", { 
-      documentId: route.params.documentId,
-      imageUri: route.params.imageUri,
-    });
+    
+    if (route.params.documentId.startsWith("doc-") && route.params.imageUri) {
+      try {
+        const newDoc = await createMutation.mutateAsync({
+          title,
+          imageUri: route.params.imageUri,
+          filter: selectedFilter,
+          pageCount: pages.length,
+        });
+        navigation.navigate("Export", { 
+          documentId: newDoc.id,
+          imageUri: route.params.imageUri,
+        });
+      } catch {
+        navigation.navigate("Export", { 
+          documentId: route.params.documentId,
+          imageUri: route.params.imageUri,
+        });
+      }
+    } else {
+      navigation.navigate("Export", { 
+        documentId: route.params.documentId,
+        imageUri: route.params.imageUri,
+      });
+    }
+  };
+
+  const handleDelete = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    
+    if (document) {
+      Alert.alert(
+        "Delete Document",
+        "Are you sure you want to delete this document?",
+        [
+          { text: "Cancel", style: "cancel" },
+          { 
+            text: "Delete", 
+            style: "destructive",
+            onPress: () => deleteMutation.mutate(document.id)
+          }
+        ]
+      );
+    } else {
+      navigation.goBack();
+    }
+  };
+
+  const handleTitleSubmit = () => {
+    setIsEditing(false);
+    if (document && title !== document.title) {
+      updateMutation.mutate({ id: document.id, data: { title } });
+    }
   };
 
   const handleToolPress = (tool: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
+
+  const imageUri = route.params.imageUri || document?.imageUri;
 
   return (
     <View
@@ -81,17 +188,37 @@ export default function EditScreen() {
           />
         </View>
 
+        <View style={styles.titleContainer}>
+          {isEditing ? (
+            <TextInput
+              style={[styles.titleInput, { color: theme.text }]}
+              value={title}
+              onChangeText={setTitle}
+              onBlur={handleTitleSubmit}
+              onSubmitEditing={handleTitleSubmit}
+              autoFocus
+              selectTextOnFocus
+            />
+          ) : (
+            <Pressable onPress={() => setIsEditing(true)} style={styles.titlePressable}>
+              <ThemedText type="h2" style={styles.titleText}>{title}</ThemedText>
+              <Feather name="edit-2" size={16} color={theme.textSecondary} style={styles.editIcon} />
+            </Pressable>
+          )}
+        </View>
+
         <View
           style={[
             styles.documentPreview,
             { backgroundColor: theme.backgroundSecondary },
           ]}
         >
-          {route.params.imageUri ? (
+          {imageUri ? (
             <View style={styles.documentPlaceholder}>
               <Image
-                source={{ uri: route.params.imageUri }}
+                source={{ uri: imageUri }}
                 style={StyleSheet.absoluteFillObject}
+                resizeMode="cover"
               />
               <View style={styles.documentOverlay} />
               <ThemedText
@@ -205,7 +332,7 @@ export default function EditScreen() {
 
             <Pressable
               style={[styles.toolButton, { backgroundColor: theme.backgroundSecondary }]}
-              onPress={() => handleToolPress("delete")}
+              onPress={handleDelete}
             >
               <Feather name="trash-2" size={24} color={theme.error} />
               <ThemedText type="caption" style={[styles.toolLabel, { color: theme.error }]}>
@@ -235,8 +362,11 @@ export default function EditScreen() {
           />
         )}
         <View style={styles.bottomBarContent}>
-          <Button onPress={handleExport} style={styles.exportButton}>
-            Export Document
+          <Button 
+            onPress={handleExport} 
+            style={styles.exportButton}
+          >
+            {route.params.documentId.startsWith("doc-") ? "Save & Export" : "Export Document"}
           </Button>
         </View>
       </View>
@@ -256,7 +386,28 @@ const styles = StyleSheet.create({
   },
   mascotRow: {
     alignItems: "center",
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.lg,
+  },
+  titleContainer: {
+    marginBottom: Spacing.lg,
+    alignItems: "center",
+  },
+  titlePressable: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  titleText: {
+    textAlign: "center",
+  },
+  titleInput: {
+    fontSize: 24,
+    fontWeight: "700",
+    textAlign: "center",
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+  },
+  editIcon: {
+    marginLeft: Spacing.sm,
   },
   documentPreview: {
     aspectRatio: 0.75,
