@@ -67,10 +67,9 @@ export default function PasswordProtectScreen() {
         const blob = await response.blob();
         formData.append("document", blob, "document.jpg");
       } else {
-        const FileSystem = await import("expo-file-system");
-        const { File } = FileSystem;
-        const file = new File({ uri: documentUri, name: "document.jpg", mimeType: "image/jpeg" });
-        formData.append("document", file as unknown as Blob);
+        const { File } = await import("expo-file-system");
+        const file = new File(documentUri);
+        formData.append("document", file as unknown as Blob, "document.jpg");
       }
       
       formData.append("password", password);
@@ -96,7 +95,7 @@ export default function PasswordProtectScreen() {
         a.click();
         URL.revokeObjectURL(url);
       } else {
-        const FileSystemModule = await import("expo-file-system");
+        const FileSystemLegacy = await import("expo-file-system/legacy");
         const Sharing = await import("expo-sharing");
         
         const arrayBuffer = await blob.arrayBuffer();
@@ -116,11 +115,11 @@ export default function PasswordProtectScreen() {
         }
         
         const fileName = `${title.replace(/\s+/g, "_")}_protected.pdf`;
-        const docDir = FileSystemModule.documentDirectory;
+        const docDir = FileSystemLegacy.cacheDirectory;
         const fileUri = docDir + fileName;
         
-        await FileSystemModule.writeAsStringAsync(fileUri, base64, {
-          encoding: FileSystemModule.EncodingType.Base64,
+        await FileSystemLegacy.writeAsStringAsync(fileUri, base64, {
+          encoding: FileSystemLegacy.EncodingType.Base64,
         });
         
         if (await Sharing.isAvailableAsync()) {

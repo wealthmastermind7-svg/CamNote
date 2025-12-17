@@ -76,8 +76,8 @@ export default function MergeScreen() {
       
       let FileClass: any = null;
       if (Platform.OS !== "web") {
-        const FileSystem = await import("expo-file-system");
-        FileClass = FileSystem.File;
+        const { File } = await import("expo-file-system");
+        FileClass = File;
       }
       
       for (let i = 0; i < documents.length; i++) {
@@ -87,8 +87,8 @@ export default function MergeScreen() {
           const blob = await response.blob();
           formData.append("documents", blob, `document_${i}.jpg`);
         } else {
-          const file = new FileClass({ uri: doc.uri, name: `document_${i}.jpg`, mimeType: "image/jpeg" });
-          formData.append("documents", file as unknown as Blob);
+          const file = new FileClass(doc.uri);
+          formData.append("documents", file as unknown as Blob, `document_${i}.jpg`);
         }
       }
       
@@ -114,7 +114,7 @@ export default function MergeScreen() {
         a.click();
         URL.revokeObjectURL(url);
       } else {
-        const FileSystemModule = await import("expo-file-system");
+        const FileSystemLegacy = await import("expo-file-system/legacy");
         const Sharing = await import("expo-sharing");
         
         const arrayBuffer = await blob.arrayBuffer();
@@ -134,11 +134,11 @@ export default function MergeScreen() {
         }
         
         const fileName = `${title.replace(/\s+/g, "_")}_merged.pdf`;
-        const docDir = FileSystemModule.documentDirectory;
+        const docDir = FileSystemLegacy.cacheDirectory;
         const fileUri = docDir + fileName;
         
-        await FileSystemModule.writeAsStringAsync(fileUri, base64, {
-          encoding: FileSystemModule.EncodingType.Base64,
+        await FileSystemLegacy.writeAsStringAsync(fileUri, base64, {
+          encoding: FileSystemLegacy.EncodingType.Base64,
         });
         
         if (await Sharing.isAvailableAsync()) {

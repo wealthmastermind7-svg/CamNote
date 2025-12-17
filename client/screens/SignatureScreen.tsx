@@ -5,7 +5,8 @@ import { useHeaderHeight } from "@react-navigation/elements";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
-import * as FileSystem from "expo-file-system";
+import { File } from "expo-file-system";
+import * as FileSystemLegacy from "expo-file-system/legacy";
 import { Feather } from "@expo/vector-icons";
 import { GestureHandlerRootView, GestureDetector, Gesture } from "react-native-gesture-handler";
 import { runOnJS } from "react-native-reanimated";
@@ -123,8 +124,8 @@ export default function SignatureScreen() {
             format: "png",
             quality: 1,
           });
-          signatureBase64 = await FileSystem.readAsStringAsync(uri, {
-            encoding: FileSystem.EncodingType.Base64,
+          signatureBase64 = await FileSystemLegacy.readAsStringAsync(uri, {
+            encoding: FileSystemLegacy.EncodingType.Base64,
           });
         } else {
           throw new Error("Cannot capture signature");
@@ -146,17 +147,15 @@ export default function SignatureScreen() {
         const signatureBlob = new Blob([signatureArray], { type: "image/png" });
         formData.append("signature", signatureBlob, "signature.png");
       } else {
-        const FileSystemModule = await import("expo-file-system");
-        const { File } = FileSystemModule;
-        const docFile = new File({ uri: documentUri, name: "document.jpg", mimeType: "image/jpeg" });
-        formData.append("document", docFile as unknown as Blob);
+        const docFile = new File(documentUri);
+        formData.append("document", docFile as unknown as Blob, "document.jpg");
         
-        const signatureUri = FileSystem.cacheDirectory + "signature_temp.png";
-        await FileSystem.writeAsStringAsync(signatureUri, signatureBase64, {
-          encoding: FileSystem.EncodingType.Base64,
+        const signatureUri = FileSystemLegacy.cacheDirectory + "signature_temp.png";
+        await FileSystemLegacy.writeAsStringAsync(signatureUri, signatureBase64, {
+          encoding: FileSystemLegacy.EncodingType.Base64,
         });
-        const sigFile = new File({ uri: signatureUri, name: "signature.png", mimeType: "image/png" });
-        formData.append("signature", sigFile as unknown as Blob);
+        const sigFile = new File(signatureUri);
+        formData.append("signature", sigFile as unknown as Blob, "signature.png");
       }
       
       const signatureCanvasWidth = SCREEN_WIDTH - Spacing.lg * 2;
@@ -177,7 +176,7 @@ export default function SignatureScreen() {
         throw new Error(errorText || "Failed to apply signature");
       }
 
-      const signedUri = FileSystem.cacheDirectory + `signed_${Date.now()}.png`;
+      const signedUri = FileSystemLegacy.cacheDirectory + `signed_${Date.now()}.png`;
       
       if (Platform.OS === "web") {
         const blob = await response.blob();
@@ -200,8 +199,8 @@ export default function SignatureScreen() {
           base64 += i + 2 < bytes.length ? base64Chars[c & 63] : "=";
         }
         
-        await FileSystem.writeAsStringAsync(signedUri, base64, {
-          encoding: FileSystem.EncodingType.Base64,
+        await FileSystemLegacy.writeAsStringAsync(signedUri, base64, {
+          encoding: FileSystemLegacy.EncodingType.Base64,
         });
         setSignedImageUri(signedUri);
       }

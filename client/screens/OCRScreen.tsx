@@ -59,10 +59,9 @@ export default function OCRScreen() {
         const blob = await response.blob();
         formData.append("image", blob, "image.jpg");
       } else {
-        const FileSystem = await import("expo-file-system");
-        const { File } = FileSystem;
-        const file = new File({ uri: imageUri, name: "image.jpg", mimeType: "image/jpeg" });
-        formData.append("image", file as unknown as Blob);
+        const { File } = await import("expo-file-system");
+        const file = new File(imageUri);
+        formData.append("image", file as unknown as Blob, "image.jpg");
       }
 
       const apiUrl = getApiUrl();
