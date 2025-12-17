@@ -24,12 +24,21 @@ CamNote is a premium iOS document scanning app - a cleaner, more intuitive alter
 - **Navigation**: React Navigation 7 with bottom tabs
 - **Screens**: ScanScreen, FilesScreen, ToolsScreen, EditScreen, ExportScreen, PaywallScreen, CustomerCenterScreen, SettingsScreen, HelpScreen
 - **Design System**: Glassmorphic UI with blur effects, emerald accent color
-- **State**: RevenueCat for subscriptions, in-memory mock data for documents
+- **State**: RevenueCat for subscriptions, PostgreSQL for document storage
 - **Subscriptions**: RevenueCat SDK (react-native-purchases)
+- **Data Fetching**: React Query with mutations for CRUD operations
 
 ### Backend (Express)
-- Currently serving static files only
-- API endpoints to be implemented for document storage
+- PostgreSQL database with Drizzle ORM
+- RESTful API for documents:
+  - GET /api/documents - list all documents
+  - GET /api/documents/:id - get single document
+  - POST /api/documents - create document
+  - PUT /api/documents/:id - update document (validated)
+  - DELETE /api/documents/:id - delete document
+
+### Database Schema
+- **documents** table: id (UUID), title, imageUri, pageCount, filter, createdAt, updatedAt
 
 ## RevenueCat Integration
 - **Provider**: `client/lib/revenuecat.tsx` - Context/hooks for subscription state
