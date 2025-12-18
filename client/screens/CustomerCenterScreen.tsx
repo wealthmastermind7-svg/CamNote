@@ -157,7 +157,7 @@ export default function CustomerCenterScreen() {
       return "Free Plan";
     }
 
-    const entitlement = customerInfo?.entitlements.active["CamNote Pro"];
+    const entitlement = customerInfo?.entitlements.active["CamNote Pro"];  // Matches RevenueCat entitlement ID
     if (entitlement) {
       const expirationDate = entitlement.expirationDate
         ? new Date(entitlement.expirationDate)
