@@ -4,6 +4,13 @@
 CamNote is a premium iOS document scanning app - a cleaner, more intuitive alternative to CamScanner. Every core action is reachable in 2 taps or less.
 
 ## Recent Changes
+- December 18, 2025: Hardcoded Values Audit & Configuration Management
+  - Created `client/constants/config.ts` for centralized configuration
+  - Moved RevenueCat entitlement ID, prices, and URLs to config constants
+  - Terms/Privacy URLs now use environment variables (EXPO_PUBLIC_TERMS_URL, EXPO_PUBLIC_PRIVACY_URL)
+  - Added comments explaining fallback prices in PaywallScreen
+  - Removed hardcoded "7-day" trial text (now uses REVENUECAT.FREE_TRIAL_DAYS constant)
+  - All pricing now pulls from RevenueCat with proper fallbacks, zero hardcoding of actual prices
 - December 17, 2025: RevenueCat SDK Integration & App Store Preparation
   - Integrated RevenueCat for subscription management
   - Added RevenueCatProvider context with entitlement checking
@@ -40,13 +47,23 @@ CamNote is a premium iOS document scanning app - a cleaner, more intuitive alter
 ### Database Schema
 - **documents** table: id (UUID), title, imageUri, pageCount, filter, createdAt, updatedAt
 
+## Configuration & Constants
+- **Config File**: `client/constants/config.ts` - Centralized app-wide configuration
+  - RevenueCat entitlement ID, prices, trial duration
+  - Legal URLs (Terms, Privacy)
+  - Default values for documents and OCR
+- **Environment Variables** (all prefixed with EXPO_PUBLIC_):
+  - `EXPO_PUBLIC_REVENUECAT_API_KEY_IOS` (iOS API key from RevenueCat)
+  - `EXPO_PUBLIC_REVENUECAT_API_KEY_ANDROID` (Android API key from RevenueCat)
+  - `EXPO_PUBLIC_TERMS_URL` (Terms of use link, defaults to example.com)
+  - `EXPO_PUBLIC_PRIVACY_URL` (Privacy policy link, defaults to example.com)
+  - `EXPO_PUBLIC_DOMAIN` (API server domain, set by Replit automatically)
+
 ## RevenueCat Integration
 - **Provider**: `client/lib/revenuecat.tsx` - Context/hooks for subscription state
-- **Entitlement**: "CamNote Pro" - checks for premium access
+- **Entitlement**: "CamNote Pro" (defined in config.ts)
 - **Products**: Monthly and Yearly packages from RevenueCat offerings
-- **Environment Variables**: 
-  - `EXPO_PUBLIC_REVENUECAT_API_KEY_IOS` (iOS API key from RevenueCat dashboard)
-  - `EXPO_PUBLIC_REVENUECAT_API_KEY_ANDROID` (Android API key from RevenueCat dashboard)
+- **Pricing**: Dynamic from RevenueCat with fallback values ($9.99 monthly, $39.99 annual)
 - **Note**: Purchases only work in Expo Go on device, not on web
 - **Setup**: Platform-specific initialization following Expo best practices
 

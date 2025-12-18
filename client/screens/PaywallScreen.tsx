@@ -24,6 +24,7 @@ import { FeatureItem } from "@/components/FeatureItem";
 import { Button } from "@/components/Button";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { useRevenueCat } from "@/lib/revenuecat";
+import { REVENUECAT, LEGAL_URLS } from "@/constants/config";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -124,14 +125,16 @@ export default function PaywallScreen() {
     if (monthlyPackage?.product.priceString) {
       return monthlyPackage.product.priceString;
     }
-    return "$9.99";
+    // Fallback to default price if RevenueCat data is unavailable
+    return REVENUECAT.FALLBACK_MONTHLY_PRICE;
   };
 
   const getAnnualPrice = () => {
     if (annualPackage?.product.priceString) {
       return annualPackage.product.priceString;
     }
-    return "$39.99";
+    // Fallback to default price if RevenueCat data is unavailable
+    return REVENUECAT.FALLBACK_ANNUAL_PRICE;
   };
 
   const getAnnualSavings = () => {
@@ -141,6 +144,7 @@ export default function PaywallScreen() {
       const savings = Math.round(((monthlyTotal - annualPrice) / monthlyTotal) * 100);
       return `SAVE ${savings}%`;
     }
+    // Fallback to default savings if RevenueCat data is unavailable
     return "SAVE 67%";
   };
 
@@ -218,7 +222,7 @@ export default function PaywallScreen() {
             title="Yearly Plan"
             price={getAnnualPrice()}
             period="/year"
-            originalPrice={monthlyPackage ? `${monthlyPackage.product.priceString} x 12` : "$119.88"}
+            originalPrice={monthlyPackage ? `${monthlyPackage.product.priceString} x 12` : REVENUECAT.FALLBACK_ANNUAL_MONTHLY_CALC}
             savings={getAnnualSavings()}
             selected={selectedPlan === "annual"}
             onPress={() => handlePlanSelect("annual")}
@@ -243,7 +247,7 @@ export default function PaywallScreen() {
           {isPurchasing ? (
             <ActivityIndicator size="small" color={theme.buttonText} />
           ) : trialEnabled ? (
-            "Start 7-Day Free Trial"
+            `Start ${REVENUECAT.FREE_TRIAL_DAYS}-Day Free Trial`
           ) : (
             "Continue"
           )}
@@ -265,7 +269,7 @@ export default function PaywallScreen() {
             {" "}
             |{" "}
           </ThemedText>
-          <Pressable onPress={() => Linking.openURL("https://luxeweb.cerolauto.store/CamNote/terms")}>
+          <Pressable onPress={() => Linking.openURL(LEGAL_URLS.TERMS)}>
             <ThemedText
               type="small"
               style={[styles.footerLink, { color: theme.textSecondary }]}
@@ -280,7 +284,7 @@ export default function PaywallScreen() {
             {" "}
             |{" "}
           </ThemedText>
-          <Pressable onPress={() => Linking.openURL("https://luxeweb.cerolauto.store/CamNote/privacy-policy")}>
+          <Pressable onPress={() => Linking.openURL(LEGAL_URLS.PRIVACY)}>
             <ThemedText
               type="small"
               style={[styles.footerLink, { color: theme.textSecondary }]}
@@ -295,7 +299,7 @@ export default function PaywallScreen() {
           style={[styles.legalText, { color: theme.textSecondary }]}
         >
           {trialEnabled
-            ? "After 7-day trial, auto-renews at the selected plan rate. Cancel anytime."
+            ? `After ${REVENUECAT.FREE_TRIAL_DAYS}-day trial, auto-renews at the selected plan rate. Cancel anytime.`
             : "Payment charged at confirmation. Auto-renews unless cancelled 24hrs before period ends."}
         </ThemedText>
       </ScrollView>

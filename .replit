@@ -49,4 +49,6 @@ ensurePreviewReachable = "/status"
 [userenv]
 
 [userenv.shared]
+EXPO_PUBLIC_TERMS_URL = "https://luxeweb.cerolauto.store/CamNote/terms"
+EXPO_PUBLIC_PRIVACY_URL = "https://luxeweb.cerolauto.store/CamNote/privacy-policy"
 

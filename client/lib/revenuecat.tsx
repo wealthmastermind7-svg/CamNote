@@ -6,10 +6,10 @@ import Purchases, {
   PurchasesOffering,
   PurchasesPackage,
 } from "react-native-purchases";
+import { REVENUECAT } from "@/constants/config";
 
 const REVENUECAT_API_KEY_IOS = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_IOS || "";
 const REVENUECAT_API_KEY_ANDROID = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_ANDROID || "";
-const ENTITLEMENT_ID = "CamNote Pro";
 
 interface RevenueCatContextType {
   isProUser: boolean;
@@ -32,7 +32,7 @@ export function RevenueCatProvider({ children }: RevenueCatProviderProps) {
   const [currentOffering, setCurrentOffering] = useState<PurchasesOffering | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const isProUser = customerInfo?.entitlements.active[ENTITLEMENT_ID] !== undefined;
+  const isProUser = customerInfo?.entitlements.active[REVENUECAT.ENTITLEMENT_ID] !== undefined;
 
   useEffect(() => {
     const initRevenueCat = async () => {
@@ -83,7 +83,7 @@ export function RevenueCatProvider({ children }: RevenueCatProviderProps) {
       const { customerInfo: updatedInfo } = await Purchases.purchasePackage(pkg);
       setCustomerInfo(updatedInfo);
 
-      if (updatedInfo.entitlements.active[ENTITLEMENT_ID] !== undefined) {
+      if (updatedInfo.entitlements.active[REVENUECAT.ENTITLEMENT_ID] !== undefined) {
         return true;
       }
       return false;
@@ -105,7 +105,7 @@ export function RevenueCatProvider({ children }: RevenueCatProviderProps) {
       const restoredInfo = await Purchases.restorePurchases();
       setCustomerInfo(restoredInfo);
 
-      if (restoredInfo.entitlements.active[ENTITLEMENT_ID] !== undefined) {
+      if (restoredInfo.entitlements.active[REVENUECAT.ENTITLEMENT_ID] !== undefined) {
         return true;
       }
       return false;
