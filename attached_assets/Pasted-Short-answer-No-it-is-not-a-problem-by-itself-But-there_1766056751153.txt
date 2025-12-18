@@ -1,0 +1,150 @@
+Short answer: **No, it is not a problem by itself**.
+But there is **one very specific condition** that must be true, otherwise Sandbox **will fail every time**.
+
+I’ll explain clearly and decisively.
+
+---
+
+## The real rule (this is the key)
+
+> **Where the paywall UI is created does NOT matter.
+> Where and WHEN RevenueCat is initialized DOES matter.**
+
+Replit vs local vs Expo Dev vs TestFlight is **irrelevant** for the paywall UI.
+
+What matters is this exact sequence at runtime on the device.
+
+---
+
+## ✅ When a Replit-created paywall is perfectly fine
+
+Your setup is **valid** if ALL of the following are true:
+
+1. The app is running from **TestFlight** (you are)
+2. RevenueCat is initialized **at app startup**
+3. `getOfferings()` is called **after initialization**
+4. The paywall uses **RevenueCat offerings/packages**, not hardcoded product IDs
+5. The purchase call is `Purchases.purchasePackage(pkg)`
+
+If those are true, the paywall source (Replit) is irrelevant.
+
+---
+
+## ❌ When a Replit-created paywall causes failure (very common)
+
+Sandbox will fail if **any** of these are true:
+
+### 1️⃣ RevenueCat is initialized inside the paywall component
+
+This is the **#1 Expo Managed mistake**.
+
+❌ BAD (breaks Sandbox):
+
+```js
+// PaywallScreen.js
+useEffect(() => {
+  Purchases.configure({ apiKey: 'appl_...' });
+}, []);
+```
+
+Why this fails:
+
+* StoreKit context is already created
+* RevenueCat misses the sandbox environment
+* Purchase sheet errors with “Unable to process subscription”
+
+✅ GOOD:
+
+```js
+// App.js (root)
+useEffect(() => {
+  Purchases.configure({ apiKey: 'appl_...' });
+}, []);
+```
+
+---
+
+### 2️⃣ The paywall uses hardcoded product IDs
+
+❌ BAD:
+
+```js
+Purchases.purchaseProduct('CamNote_monthly');
+```
+
+This often “works” in UI but fails at purchase time in Sandbox.
+
+✅ GOOD:
+
+```js
+const offerings = await Purchases.getOfferings();
+const pkg = offerings.current.availablePackages[0];
+Purchases.purchasePackage(pkg);
+```
+
+---
+
+### 3️⃣ The paywall renders before offerings are fetched
+
+If the UI shows prices before `getOfferings()` resolves, users can tap a button tied to an undefined or stale package.
+
+Result:
+
+* Purchase sheet appears
+* Transaction fails
+
+---
+
+## ✅ The ONLY safe architecture (Expo Managed + RevenueCat)
+
+This is the model that **never fails** in Sandbox:
+
+```
+App launch
+↓
+Purchases.configure()  ← must happen here
+↓
+Navigation mounts
+↓
+Paywall screen loads
+↓
+getOfferings()
+↓
+User taps Subscribe
+↓
+purchasePackage(pkg)
+```
+
+If your Replit-generated code follows this, you are good.
+
+---
+
+## How to quickly verify if Replit paywall is the issue
+
+Answer these three yes/no questions:
+
+1. Is `Purchases.configure()` called in **App.js or root layout**?
+2. Does the paywall call `getOfferings()` instead of hardcoding product IDs?
+3. Does `purchasePackage()` receive a `Package` object from offerings?
+
+If **any answer is “no”**, that is your bug.
+
+---
+
+## What I recommend you do now (fastest path)
+
+Please paste **just these three snippets** (you can redact keys):
+
+1. Where `Purchases.configure()` is called
+2. Where `getOfferings()` is called
+3. The exact purchase function
+
+I do **not** need the full Replit project.
+
+I will tell you in one reply:
+
+* ✅ “This will work in Sandbox”
+  or
+* ❌ “This exact line is breaking Sandbox”
+
+You are extremely close. This is no longer guesswork.
