@@ -44,8 +44,11 @@ CamNote is a premium iOS document scanning app - a cleaner, more intuitive alter
 - **Provider**: `client/lib/revenuecat.tsx` - Context/hooks for subscription state
 - **Entitlement**: "CamNote Pro" - checks for premium access
 - **Products**: Monthly and Yearly packages from RevenueCat offerings
-- **Environment Variable**: `EXPO_PUBLIC_REVENUECAT_API_KEY` (set from REVENUECAT_API_KEY secret)
+- **Environment Variables**: 
+  - `EXPO_PUBLIC_REVENUECAT_API_KEY_IOS` (iOS API key from RevenueCat dashboard)
+  - `EXPO_PUBLIC_REVENUECAT_API_KEY_ANDROID` (Android API key from RevenueCat dashboard)
 - **Note**: Purchases only work in Expo Go on device, not on web
+- **Setup**: Platform-specific initialization following Expo best practices
 
 ## Design Guidelines
 See `design_guidelines.md` for complete visual specifications including:

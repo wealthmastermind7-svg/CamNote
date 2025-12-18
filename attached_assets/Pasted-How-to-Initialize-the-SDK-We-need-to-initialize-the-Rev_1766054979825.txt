@@ -1,0 +1,109 @@
+How to Initialize the SDK
+We need to initialize the RevenueCat SDK with Purchases.configure call. Add the following code to the entry point of your app. If you’re using Expo router in your project this means the top most _Layout.tsx component, otherwise it is most likely your App.tsx file. Notice that everything needs to be called in a useEffect hook without any dependencies, to initialize the SDK only once.
+
+
+Copy
+
+import { Platform, useEffect } from 'react-native';
+import { useEffect } from 'react';
+import Purchases, { LOG_LEVEL } from 'react-native-purchases';
+
+//...
+
+export default function App() {
+
+  useEffect(() => {
+    Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+
+    if (Platform.OS === 'ios') {
+       Purchases.configure({apiKey: <revenuecat_project_apple_api_key>});
+    } else if (Platform.OS === 'android') {
+       Purchases.configure({apiKey: <revenuecat_project_google_api_key>});
+    }
+
+  }, []);
+We are first calling the setLogLevel to start logging. This will help us to notice problems in our setup, for example if we are calling things with the wrong API key. Take a look at RevenueCat’s debug log guide if you start seeing any error messages.
+
+After that we do the actual initialization using separate keys.These keys can be found on the RevenueCat dashboard. Since iOS and Android have different keys we need to detect which platform the app is running using the Platform.OS.
+
+Once you run your app you should not see any visual changes but there should be logs telling about successful initialization of the RevenueCat SDK. In case there are any problems or error messages, double check the previous checks. If you’re running into problems with native modules missing, rebuild your app completely.
+
+Step 4: Displaying our paywall
+Next we want to display our subscription options to the users using a paywall. To do this completely we first need to create a new paywall in RevenueCat’s paywall editor, and then add the paywall component to our app.
+
+Creating a paywall in RevenueCat
+Navigate to your RevenueCat dashboard and select your project if you have not already. In the navigation on the left you see Paywalls under ‘Monetization tools’, click that and then ‘+ new paywall’
+
+Creating a paywall in RevenueCat
+Before presenting you with the paywall starters, it asks you to choose an offering to use. We created this in an earlier step, so select the offering you created. Alternatively you can also select the option to ‘continue without adding an Offering’
+
+paywall editor
+You have the option to create your paywall from scratch using RevenueCat’s visual paywall builder, or select from the premade templates. In this case since we’ve configured our product with annual and monthly options, I’m going to select the first option available.
+
+discount widget
+You can fully customize what is shown on the paywall screen in this editor; from copy to colors and even custom components like feature carousel. Once you’re happy with the paywall, press Publish paywall to deploy the changes you’ve made. RevenueCat will automatically fetch changes to the paywall when you open the app, so you can always make changes to it without having to deploy a new version of your app to app stores.
+
+Adding the paywall component to your app
+For displaying the paywall we have few different options:
+
+Using RevenueCatUI.presentPaywall: this will display a paywall when invoked.
+Using RevenueCatUI.presentPaywallIfNeeded: this will present a paywall only if the customer does not have an unlocked entitlement.
+Manually presenting <RevenueCatUI.Paywall>: this gives you more flexibility on how the paywall is presented.
+In this project we want to present the user with a paywall that restricts user from accessing the app before they have subscribed. This is not the most user friendly option, but enough for us for now. Easiest way to achieve this behavior is to use the presentPaywallIfNeeded function
+
+Insert the following code in the same place where you initialized the RevenueCat SDK but in a separate hook. This call is asynchronous. We need to call it asynchronously in a useEffect. Now save your changes and wait for the app to reload. If everything is initialized correctly your app should open and shortly after present the user with the paywall we configured in the dashboard.
+
+
+Copy
+
+import { useEffect } from "react";
+import { Button, Text, View } from "react-native";
+import RevenueCatUI, { PAYWALL_RESULT } from "react-native-purchases-ui";
+
+export default function Index() {
+  useEffect(() => {
+    const checkPaywall = async () => {
+      try {
+        const paywallResult = await RevenueCatUI.presentPaywallIfNeeded({
+          requiredEntitlementIdentifier: "pro"
+        });
+
+        if (paywallResult === PAYWALL_RESULT.PURCHASED || 
+            paywallResult === PAYWALL_RESULT.RESTORED) {
+          console.log("User has access to pro features");
+          // Handle successful purchase or restore here
+        }
+      } catch (error) {
+        console.error("Error presenting paywall:", error);
+      }
+    };
+
+    checkPaywall();
+  }, []);
+
+  return (
+    <View
+      style={{
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <Text style={{ marginBottom: 20 }}>RevenueCat Paywall Example</Text>
+      <Button 
+        title="Show Paywall" 
+        onPress={() => RevenueCatUI.presentPaywallIfNeeded({
+          requiredEntitlementIdentifier: "pro"
+        })}
+      />
+    </View>
+  );
+}
+Hooray! You now have working subscriptions and a paywall to prompt the user to get them to pay. Try purchasing any of the two subscriptions on the paywall and after a successful payment the paywall should disappear and you now have full access to the features of your app.
+
+Conclusion
+Adding in-app subscriptions to your Expo app doesn't have to be a time-consuming or technically daunting task. With the features provided by RevenueCat’s React Native SDKs, developers can focus less on backend infrastructure and more on building experiences that delight users.
+
+In this guide, we’ve walked through the complete process of setting up subscriptions in an Expo app – from installing the necessary SDKs, creating a development build, and configuring your products and offerings, to customizing and deploying a paywall with RevenueCat’s powerful UI tools. With just a few lines of code and minimal setup effort, your app is now capable of handling cross-platform subscription logic, entitlement checks, and user-friendly monetization flows.
+
+Now that you have a working paywall and subscription system, the next step is to experiment with your offerings, iterate on your paywall design, and monitor your metrics in the RevenueCat dashboard; to build a sustainable subscription-based business with ease.

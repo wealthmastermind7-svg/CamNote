@@ -7,7 +7,8 @@ import Purchases, {
   PurchasesPackage,
 } from "react-native-purchases";
 
-const REVENUECAT_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY || "";
+const REVENUECAT_API_KEY_IOS = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_IOS || "";
+const REVENUECAT_API_KEY_ANDROID = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_ANDROID || "";
 const ENTITLEMENT_ID = "CamNote Pro";
 
 interface RevenueCatContextType {
@@ -43,8 +44,10 @@ export function RevenueCatProvider({ children }: RevenueCatProviderProps) {
 
         Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
 
-        if (REVENUECAT_API_KEY) {
-          await Purchases.configure({ apiKey: REVENUECAT_API_KEY });
+        const apiKey = Platform.OS === "ios" ? REVENUECAT_API_KEY_IOS : REVENUECAT_API_KEY_ANDROID;
+
+        if (apiKey) {
+          await Purchases.configure({ apiKey });
 
           const info = await Purchases.getCustomerInfo();
           setCustomerInfo(info);
@@ -57,9 +60,11 @@ export function RevenueCatProvider({ children }: RevenueCatProviderProps) {
           Purchases.addCustomerInfoUpdateListener((info) => {
             setCustomerInfo(info);
           });
+        } else {
+          console.warn("RevenueCat API key not configured for this platform");
         }
       } catch (error) {
-        console.log("RevenueCat initialization error:", error);
+        console.error("RevenueCat initialization error:", error);
       } finally {
         setIsLoading(false);
       }
