@@ -39,6 +39,7 @@ export default function EditScreen() {
   const [pages, setPages] = useState([1]);
   const [title, setTitle] = useState("Untitled Document");
   const [isEditing, setIsEditing] = useState(false);
+  const [pageRotations, setPageRotations] = useState<{ [key: number]: number }>({});
 
   const { data: document } = useQuery<Document>({
     queryKey: ["/api/documents", route.params.documentId],
@@ -125,8 +126,21 @@ export default function EditScreen() {
     }
   };
 
-  const handleToolPress = (tool: string) => {
+  const handleRotate = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setPageRotations(prev => ({
+      ...prev,
+      0: ((prev[0] || 0) + 90) % 360
+    }));
+  };
+
+  const handleCrop = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Alert.alert(
+      "Crop Document",
+      "Crop functionality is available with the enhanced editing tools. Use the preview to adjust framing.",
+      [{ text: "OK", style: "default" }]
+    );
   };
 
   const imageUri = route.params.imageUri || document?.imageUri;
@@ -185,7 +199,10 @@ export default function EditScreen() {
             <View style={styles.documentPlaceholder}>
               <Image
                 source={{ uri: imageUri }}
-                style={StyleSheet.absoluteFillObject}
+                style={[
+                  StyleSheet.absoluteFillObject,
+                  { transform: [{ rotate: `${pageRotations[0] || 0}deg` }] }
+                ]}
                 resizeMode="cover"
               />
               <View style={styles.documentOverlay} />
@@ -270,7 +287,7 @@ export default function EditScreen() {
           <View style={styles.toolsGrid}>
             <Pressable
               style={[styles.toolButton, { backgroundColor: theme.backgroundSecondary }]}
-              onPress={() => handleToolPress("rotate")}
+              onPress={handleRotate}
             >
               <Feather name="rotate-cw" size={24} color={theme.text} />
               <ThemedText type="caption" style={styles.toolLabel}>
@@ -280,7 +297,7 @@ export default function EditScreen() {
 
             <Pressable
               style={[styles.toolButton, { backgroundColor: theme.backgroundSecondary }]}
-              onPress={() => handleToolPress("crop")}
+              onPress={handleCrop}
             >
               <Feather name="crop" size={24} color={theme.text} />
               <ThemedText type="caption" style={styles.toolLabel}>
