@@ -14,7 +14,10 @@ const REVENUECAT_API_KEY_ANDROID = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_AN
 interface RevenueCatContextType {
   isProUser: boolean;
   customerInfo: CustomerInfo | null;
-  currentOffering: PurchasesOffering | null;
+  currentOffering: {
+    monthly: PurchasesPackage | null;
+    annual: PurchasesPackage | null;
+  } | null;
   isLoading: boolean;
   purchasePackage: (pkg: PurchasesPackage) => Promise<boolean>;
   restorePurchases: () => Promise<boolean>;
@@ -29,10 +32,32 @@ interface RevenueCatProviderProps {
 
 export function RevenueCatProvider({ children }: RevenueCatProviderProps) {
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
-  const [currentOffering, setCurrentOffering] = useState<PurchasesOffering | null>(null);
+  const [currentOffering, setCurrentOffering] = useState<{ monthly: PurchasesPackage | null; annual: PurchasesPackage | null } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const isProUser = customerInfo?.entitlements.active[REVENUECAT.ENTITLEMENT_ID] !== undefined;
+
+  const extractPackages = (offering: PurchasesOffering | null) => {
+    if (!offering) return null;
+    
+    const packages = offering.availablePackages || [];
+    const monthlyPkg = packages.find(pkg => 
+      pkg.identifier === "monthly" || 
+      pkg.packageType === "MONTHLY" ||
+      pkg.identifier?.includes("month")
+    ) || packages[0];
+    
+    const annualPkg = packages.find(pkg => 
+      pkg.identifier === "annual" || 
+      pkg.packageType === "ANNUAL" ||
+      pkg.identifier?.includes("year")
+    ) || packages[packages.length - 1];
+
+    return {
+      monthly: monthlyPkg || null,
+      annual: annualPkg || null,
+    };
+  };
 
   useEffect(() => {
     const initRevenueCat = async () => {
@@ -54,7 +79,8 @@ export function RevenueCatProvider({ children }: RevenueCatProviderProps) {
 
           const offerings = await Purchases.getOfferings();
           if (offerings.current) {
-            setCurrentOffering(offerings.current);
+            const packages = extractPackages(offerings.current);
+            setCurrentOffering(packages);
           }
 
           Purchases.addCustomerInfoUpdateListener((info) => {
