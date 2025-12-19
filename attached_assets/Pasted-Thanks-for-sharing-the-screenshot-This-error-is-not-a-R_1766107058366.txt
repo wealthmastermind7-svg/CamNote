@@ -1,0 +1,173 @@
+Thanks for sharing the screenshot. This error is not a React Native rendering issue, it is an OCR execution failure inside your processOCR function. The key point is this line:
+
+OCR error: Error: OCR processing failed
+at OCRScreen.tsx:86
+
+That means your own OCR call threw or rejected, and the catch block is working as intended.
+
+Below is a precise diagnosis and fix path, based on common Expo OCR setups.
+
+⸻
+
+What this error actually means
+
+Your flow is effectively:
+	1.	User selects or captures an image
+	2.	processOCR() runs
+	3.	OCR library fails internally
+	4.	You catch it and log "OCR processing failed"
+
+So the bug is upstream of line 86, not on line 86 itself.
+
+⸻
+
+Most common causes (ranked)
+
+1. ❌ OCR library not supported in Expo Go or TestFlight
+
+If you are using any of these, they will fail in Expo Go or managed builds:
+	•	react-native-mlkit-ocr
+	•	react-native-tesseract-ocr
+	•	vision-camera-text-recognition
+	•	Any native ML Kit binding
+
+Why
+Expo Go does not include custom native OCR binaries.
+
+Symptom
+OCR works nowhere, always throws, no native crash.
+
+Fix
+You must either:
+	•	Use Expo Dev Client, or
+	•	Eject to Bare Workflow
+
+If you want OCR without ejecting, see option A below.
+
+⸻
+
+2. ❌ Image URI is invalid or inaccessible
+
+Very common with ImagePicker or Camera.
+
+Typical failure:
+
+uri = "file:///var/mobile/Containers/Data/..."
+
+But OCR library expects:
+	•	local file path without file://, or
+	•	base64
+
+Fix
+Log this before OCR:
+
+console.log("OCR image URI:", imageUri);
+
+Then normalize:
+
+const cleanUri = imageUri.replace("file://", "");
+
+or convert to base64.
+
+⸻
+
+3. ❌ Permission not granted (iOS silent failure)
+
+OCR will fail if:
+	•	Photo Library permission denied
+	•	Camera permission denied
+
+Expo does NOT throw a permission error here, OCR just fails.
+
+Fix
+Before OCR:
+
+const { status } = await MediaLibrary.requestPermissionsAsync();
+if (status !== "granted") {
+  throw new Error("Media permission not granted");
+}
+
+
+⸻
+
+4. ❌ Empty or corrupted image
+
+If user cancels picker or camera returns empty asset.
+
+Fix
+Guard clause:
+
+if (!imageUri) {
+  throw new Error("No image provided for OCR");
+}
+
+
+⸻
+
+What I need to see to pinpoint it exactly
+
+Paste only this part of OCRScreen.tsx:
+
+const processOCR = async () => {
+  // full function
+};
+
+And tell me:
+	1.	Which OCR library you are using
+	2.	Expo managed or bare
+	3.	Expo Go, Dev Client, or TestFlight
+
+I will then give you the exact fix, not guesses.
+
+⸻
+
+Recommended solutions (pick one)
+
+Option A: OCR that works in Expo Go (no eject)
+
+Use cloud OCR:
+	•	Google Vision API
+	•	AWS Textract
+	•	OCR.Space (free tier)
+
+This works in:
+	•	Expo Go
+	•	TestFlight
+	•	Production
+
+I can wire this in 10 minutes.
+
+⸻
+
+Option B: Native OCR (best performance)
+	•	Eject to Bare
+	•	Use ML Kit Vision
+	•	Build with EAS Build
+
+This is how CamScanner-class apps do it.
+
+⸻
+
+Quick sanity check you can do now
+
+Add this inside catch:
+
+catch (error) {
+  console.error("OCR error raw:", JSON.stringify(error, null, 2));
+}
+
+If you see:
+	•	Native module not found → Expo Go limitation
+	•	file not found → URI issue
+	•	permission denied → iOS permission issue
+
+⸻
+
+Bottom line
+
+This error is expected behavior, not a crash.
+Your OCR engine is either:
+	•	unsupported in Expo Go, or
+	•	receiving an invalid image input.
+
+Send me the processOCR function and OCR library name and I will give you a drop-in fix, not theory.

@@ -92,20 +92,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/ocr", upload.single("image"), async (req, res) => {
+  app.post("/api/ocr", async (req, res) => {
     try {
-      if (!req.file) {
-        return res.status(400).json({ error: "No image file provided" });
+      const { image } = req.body;
+      if (!image) {
+        return res.status(400).json({ error: "No image data provided" });
       }
 
-      const imagePath = req.file.path;
+      const imageBuffer = Buffer.from(image, "base64");
+      const imagePath = path.join("/tmp", `ocr_${Date.now()}.jpg`);
+      fs.writeFileSync(imagePath, imageBuffer);
       
       const { data: { text, confidence } } = await Tesseract.recognize(
         imagePath,
         "eng",
-        {
-          logger: (m) => console.log(m)
-        }
+        { logger: (m) => console.log("OCR:", m) }
       );
 
       fs.unlinkSync(imagePath);

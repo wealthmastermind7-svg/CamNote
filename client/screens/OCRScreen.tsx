@@ -52,24 +52,31 @@ export default function OCRScreen() {
     setExtractedText("");
 
     try {
-      const formData = new FormData();
+      let base64Image: string = "";
       
       if (Platform.OS === "web") {
         const response = await fetch(imageUri);
         const blob = await response.blob();
-        formData.append("image", blob, "image.jpg");
+        const reader = new FileReader();
+        await new Promise((resolve) => {
+          reader.onloadend = () => {
+            base64Image = (reader.result as string).split(",")[1];
+            resolve(null);
+          };
+          reader.readAsDataURL(blob);
+        });
       } else {
-        formData.append("image", {
-          uri: imageUri,
-          type: "image/jpeg",
-          name: "image.jpg",
-        } as any);
+        const FileSystem = await import("expo-file-system/legacy");
+        base64Image = await FileSystem.readAsStringAsync(imageUri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
       }
 
       const apiUrl = getApiUrl();
       const response = await fetch(`${apiUrl}/api/ocr`, {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: base64Image }),
       });
 
       if (!response.ok) {
