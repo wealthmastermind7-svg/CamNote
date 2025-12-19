@@ -74,11 +74,7 @@ export default function MergeScreen() {
     try {
       const formData = new FormData();
       
-      let FileClass: any = null;
-      if (Platform.OS !== "web") {
-        const { File } = await import("expo-file-system");
-        FileClass = File;
-      }
+      const FileSystem = await import("expo-file-system/legacy");
       
       for (let i = 0; i < documents.length; i++) {
         const doc = documents[i];
@@ -87,8 +83,16 @@ export default function MergeScreen() {
           const blob = await response.blob();
           formData.append("documents", blob, `document_${i}.jpg`);
         } else {
-          const file = new FileClass(doc.uri);
-          formData.append("documents", file as unknown as Blob, `document_${i}.jpg`);
+          const base64 = await FileSystem.readAsStringAsync(doc.uri, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          const binaryString = atob(base64);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          const blob = new Blob([bytes], { type: "image/jpeg" });
+          formData.append("documents", blob, `document_${i}.jpg`);
         }
       }
       

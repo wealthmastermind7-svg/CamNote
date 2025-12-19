@@ -147,15 +147,24 @@ export default function SignatureScreen() {
         const signatureBlob = new Blob([signatureArray], { type: "image/png" });
         formData.append("signature", signatureBlob, "signature.png");
       } else {
-        const docFile = new File(documentUri);
-        formData.append("document", docFile as unknown as Blob, "document.jpg");
-        
-        const signatureUri = FileSystemLegacy.cacheDirectory + "signature_temp.png";
-        await FileSystemLegacy.writeAsStringAsync(signatureUri, signatureBase64, {
+        const docBase64 = await FileSystemLegacy.readAsStringAsync(documentUri, {
           encoding: FileSystemLegacy.EncodingType.Base64,
         });
-        const sigFile = new File(signatureUri);
-        formData.append("signature", sigFile as unknown as Blob, "signature.png");
+        const docBinaryString = atob(docBase64);
+        const docBytes = new Uint8Array(docBinaryString.length);
+        for (let i = 0; i < docBinaryString.length; i++) {
+          docBytes[i] = docBinaryString.charCodeAt(i);
+        }
+        const docBlob = new Blob([docBytes], { type: "image/jpeg" });
+        formData.append("document", docBlob, "document.jpg");
+        
+        const sigBinaryString = atob(signatureBase64);
+        const sigBytes = new Uint8Array(sigBinaryString.length);
+        for (let i = 0; i < sigBinaryString.length; i++) {
+          sigBytes[i] = sigBinaryString.charCodeAt(i);
+        }
+        const sigBlob = new Blob([sigBytes], { type: "image/png" });
+        formData.append("signature", sigBlob, "signature.png");
       }
       
       const signatureCanvasWidth = SCREEN_WIDTH - Spacing.lg * 2;
