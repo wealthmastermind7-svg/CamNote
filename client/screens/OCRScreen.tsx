@@ -59,17 +59,11 @@ export default function OCRScreen() {
         const blob = await response.blob();
         formData.append("image", blob, "image.jpg");
       } else {
-        const FileSystem = await import("expo-file-system/legacy");
-        const base64 = await FileSystem.readAsStringAsync(imageUri, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
-        const binaryString = atob(base64);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        const blob = new Blob([bytes], { type: "image/jpeg" });
-        formData.append("image", blob, "image.jpg");
+        formData.append("image", {
+          uri: imageUri,
+          type: "image/jpeg",
+          name: "image.jpg",
+        } as any);
       }
 
       const apiUrl = getApiUrl();
