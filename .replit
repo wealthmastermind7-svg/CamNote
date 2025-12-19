@@ -17,6 +17,10 @@ externalPort = 5000
 localPort = 8081
 externalPort = 80
 
+[[ports]]
+localPort = 8082
+externalPort = 3000
+
 [env]
 PORT = "5000"
 
@@ -51,4 +55,5 @@ ensurePreviewReachable = "/status"
 [userenv.shared]
 EXPO_PUBLIC_TERMS_URL = "https://luxeweb.cerolauto.store/CamNote/terms"
 EXPO_PUBLIC_PRIVACY_URL = "https://luxeweb.cerolauto.store/CamNote/privacy-policy"
+EXPO_PUBLIC_DOMAIN = "my-app.replit.app:5000"
 
