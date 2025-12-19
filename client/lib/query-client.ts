@@ -2,12 +2,19 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 /**
  * Gets the base URL for the Express API server
- * Hardcoded for iOS/TestFlight compatibility (env vars are not injected at runtime)
+ * For iOS/TestFlight: Update this URL with your actual Replit published domain
  * @returns {string} The API base URL
  */
 export function getApiUrl(): string {
-  // Hardcoded for production: env vars don't get injected into iOS/TestFlight builds
-  return "https://my-app.replit.app:5000";
+  // Development: Use env var if available (only works in Expo dev, not in TestFlight)
+  if (process.env.EXPO_PUBLIC_DOMAIN) {
+    return `https://${process.env.EXPO_PUBLIC_DOMAIN}`;
+  }
+  
+  // Production/TestFlight: Hardcoded URL
+  // IMPORTANT: Replace YOUR-PROJECT-NAME with your actual Replit published domain
+  // Example: https://camnote.replit.app:5000
+  return "https://YOUR-PROJECT-NAME.replit.app:5000";
 }
 
 async function throwIfResNotOk(res: Response) {
