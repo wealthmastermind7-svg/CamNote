@@ -5,6 +5,7 @@ import EditScreen from "@/screens/EditScreen";
 import ExportScreen from "@/screens/ExportScreen";
 import PaywallScreen from "@/screens/PaywallScreen";
 import SettingsScreen from "@/screens/SettingsScreen";
+import ScanQualityScreen from "@/screens/ScanQualityScreen";
 import HelpScreen from "@/screens/HelpScreen";
 import CustomerCenterScreen from "@/screens/CustomerCenterScreen";
 import OCRScreen from "@/screens/OCRScreen";
@@ -20,6 +21,7 @@ export type RootStackParamList = {
   Export: { documentId: string; imageUri?: string };
   Paywall: undefined;
   Settings: undefined;
+  ScanQuality: undefined;
   Help: undefined;
   CustomerCenter: undefined;
   OCR: { imageUri?: string } | undefined;
@@ -75,6 +77,14 @@ export default function RootStackNavigator() {
         component={SettingsScreen}
         options={{
           headerTitle: "Settings",
+          headerTintColor: theme.text,
+        }}
+      />
+      <Stack.Screen
+        name="ScanQuality"
+        component={ScanQualityScreen}
+        options={{
+          headerTitle: "Scan Quality",
           headerTintColor: theme.text,
         }}
       />

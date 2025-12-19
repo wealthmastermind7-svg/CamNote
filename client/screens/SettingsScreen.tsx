@@ -33,6 +33,9 @@ export default function SettingsScreen() {
 
   const handleSettingPress = (title: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (title === "Scan Quality") {
+      navigation.navigate("ScanQuality");
+    }
   };
 
   return (

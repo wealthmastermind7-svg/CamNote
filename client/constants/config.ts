@@ -38,3 +38,32 @@ export const DEFAULTS = {
 export const OCR = {
   DEFAULT_LANGUAGE: "eng",
 } as const;
+
+// Scan Quality Settings
+export const SCAN_QUALITY = {
+  PRESETS: [
+    {
+      id: "draft",
+      label: "Draft (Fast)",
+      description: "72 DPI, high compression - smallest file size",
+      dpi: 72,
+      compression: "high",
+    },
+    {
+      id: "standard",
+      label: "Standard (Default)",
+      description: "150 DPI, medium compression - balanced quality & size",
+      dpi: 150,
+      compression: "medium",
+    },
+    {
+      id: "high",
+      label: "High Quality",
+      description: "300 DPI, low compression - best quality, larger files",
+      dpi: 300,
+      compression: "low",
+    },
+  ] as const,
+  DEFAULT: "standard",
+  STORAGE_KEY: "@camnote_scan_quality",
+} as const;
