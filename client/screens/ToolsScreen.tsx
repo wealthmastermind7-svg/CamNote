@@ -178,8 +178,8 @@ export default function ToolsScreen() {
             icon="layers"
             title="Merge Documents"
             subtitle="Combine multiple scans"
-            locked={false}
-            onPress={() => handleToolPress("merge", false)}
+            locked={!isProUser}
+            onPress={() => handleToolPress("merge", !isProUser)}
           />
         </View>
 

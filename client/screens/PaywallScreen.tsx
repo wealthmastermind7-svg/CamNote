@@ -196,7 +196,6 @@ export default function PaywallScreen() {
           <FeatureItem text="Export to Word and Excel" />
           <FeatureItem text="Password-protected PDFs" />
           <FeatureItem text="Digital signature tool" />
-          <FeatureItem text="Priority support" />
         </View>
 
         <View

@@ -4,6 +4,14 @@
 CamNote is a premium iOS document scanning app - a cleaner, more intuitive alternative to CamScanner. Every core action is reachable in 2 taps or less.
 
 ## Recent Changes
+- December 19, 2025: Premium Features Complete - 5 Features 100% Functional
+  - ✅ Removed Priority Support from paywall (5 premium features only)
+  - ✅ Implemented Word/Excel/Text export on backend
+  - ✅ Added `/api/export/docx`, `/api/export/xlsx`, `/api/export/txt` routes
+  - ✅ Updated ExportScreen to gate Word/Excel/Text exports behind RevenueCat
+  - ✅ Marked Merge Documents as premium feature (gated behind CamNote Pro)
+  - ✅ Installed docx and xlsx npm packages for proper export formats
+  - All 5 premium features now extract text via Tesseract OCR and export properly
 - December 18, 2025: Hardcoded Values Audit & Configuration Management
   - Created `client/constants/config.ts` for centralized configuration
   - Moved RevenueCat entitlement ID, prices, and URLs to config constants
@@ -75,11 +83,19 @@ See `design_guidelines.md` for complete visual specifications including:
 - Glass panel styling
 
 ## Key Features
-- One-tap document scanning
+**Free:**
+- One-tap document scanning with camera or gallery
 - Multi-page PDF creation
 - Filters: Clean, B&W, Soft Color, Original
-- Export to PDF, JPG (free) and Word, Excel, TXT (premium)
-- OCR, signatures, password protection (premium)
+- Export to PDF, JPG
+
+**Premium (CamNote Pro):**
+- Unlimited document scans (free tier limited)
+- OCR text extraction (Tesseract.js)
+- Export to Word (DOCX), Excel (XLSX), Plain Text (TXT)
+- Digital signature tool
+- Password-protected PDFs
+- Document merging (combine multiple scans)
 
 ## Monetization
 - Free: Basic scanning, PDF/JPG export

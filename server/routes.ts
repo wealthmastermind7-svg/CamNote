@@ -8,6 +8,8 @@ import sharp from "sharp";
 import multer from "multer";
 import * as fs from "fs";
 import * as path from "path";
+import { Document, Packer, Paragraph, TextRun } from "docx";
+import * as XLSX from "xlsx";
 
 const upload = multer({ 
   dest: "/tmp/uploads/",
@@ -269,6 +271,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("PDF merge error:", error);
       res.status(500).json({ error: "Failed to merge documents" });
+    }
+  });
+
+  app.post("/api/export/docx", upload.single("image"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No image file provided" });
+      }
+
+      const imagePath = req.file.path;
+
+      const { data: { text } } = await Tesseract.recognize(imagePath, "eng", {
+        logger: (m) => console.log(m),
+      });
+
+      fs.unlinkSync(imagePath);
+
+      const doc = new Document({
+        sections: [
+          {
+            properties: {},
+            children: text
+              .trim()
+              .split("\n")
+              .map(
+                (line) =>
+                  new Paragraph({
+                    children: [
+                      new TextRun({
+                        text: line || " ",
+                        font: "Calibri",
+                        size: 22,
+                      }),
+                    ],
+                  })
+              ),
+          },
+        ],
+      });
+
+      const buffer = await Packer.toBuffer(doc);
+
+      res.set("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+      res.set("Content-Disposition", "attachment; filename=document.docx");
+      res.send(buffer);
+    } catch (error) {
+      console.error("DOCX export error:", error);
+      res.status(500).json({ error: "Failed to export as DOCX" });
+    }
+  });
+
+  app.post("/api/export/xlsx", upload.single("image"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No image file provided" });
+      }
+
+      const imagePath = req.file.path;
+
+      const { data: { text } } = await Tesseract.recognize(imagePath, "eng", {
+        logger: (m) => console.log(m),
+      });
+
+      fs.unlinkSync(imagePath);
+
+      const lines = text.trim().split("\n");
+      const data = lines.map((line) => [line]);
+
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.aoa_to_sheet(data);
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Extracted Text");
+
+      const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "buffer" });
+
+      res.set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      res.set("Content-Disposition", "attachment; filename=document.xlsx");
+      res.send(buffer);
+    } catch (error) {
+      console.error("XLSX export error:", error);
+      res.status(500).json({ error: "Failed to export as XLSX" });
+    }
+  });
+
+  app.post("/api/export/txt", upload.single("image"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No image file provided" });
+      }
+
+      const imagePath = req.file.path;
+
+      const { data: { text } } = await Tesseract.recognize(imagePath, "eng", {
+        logger: (m) => console.log(m),
+      });
+
+      fs.unlinkSync(imagePath);
+
+      res.set("Content-Type", "text/plain");
+      res.set("Content-Disposition", "attachment; filename=document.txt");
+      res.send(text.trim());
+    } catch (error) {
+      console.error("TXT export error:", error);
+      res.status(500).json({ error: "Failed to export as TXT" });
     }
   });
 
