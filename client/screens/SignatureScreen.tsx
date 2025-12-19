@@ -150,21 +150,21 @@ export default function SignatureScreen() {
         const docBase64 = await FileSystemLegacy.readAsStringAsync(documentUri, {
           encoding: FileSystemLegacy.EncodingType.Base64,
         });
-        const docBinaryString = atob(docBase64);
-        const docBytes = new Uint8Array(docBinaryString.length);
-        for (let i = 0; i < docBinaryString.length; i++) {
-          docBytes[i] = docBinaryString.charCodeAt(i);
-        }
-        const docBlob = new Blob([docBytes], { type: "image/jpeg" });
-        formData.append("document", docBlob, "document.jpg");
+        formData.append("document", {
+          uri: documentUri,
+          type: "image/jpeg",
+          name: "document.jpg",
+        } as any);
         
-        const sigBinaryString = atob(signatureBase64);
-        const sigBytes = new Uint8Array(sigBinaryString.length);
-        for (let i = 0; i < sigBinaryString.length; i++) {
-          sigBytes[i] = sigBinaryString.charCodeAt(i);
-        }
-        const sigBlob = new Blob([sigBytes], { type: "image/png" });
-        formData.append("signature", sigBlob, "signature.png");
+        const sigUri = FileSystemLegacy.cacheDirectory + `signature_temp_${Date.now()}.png`;
+        await FileSystemLegacy.writeAsStringAsync(sigUri, signatureBase64, {
+          encoding: FileSystemLegacy.EncodingType.Base64,
+        });
+        formData.append("signature", {
+          uri: sigUri,
+          type: "image/png",
+          name: "signature.png",
+        } as any);
       }
       
       const signatureCanvasWidth = SCREEN_WIDTH - Spacing.lg * 2;
@@ -308,36 +308,34 @@ export default function SignatureScreen() {
                 collapsable={false}
               >
                 <GestureDetector gesture={panGesture}>
-                  <View style={{ width: canvasWidth, height: canvasHeight }}>
-                    {paths.map((path, pathIndex) => (
-                      <React.Fragment key={pathIndex}>
-                        {path.map((point, pointIndex) => (
-                          <View
-                            key={pointIndex}
-                            style={{
-                              position: "absolute",
-                              left: point.x - 1.5,
-                              top: point.y - 1.5,
-                              width: 3,
-                              height: 3,
-                              backgroundColor: "#000000",
-                              borderRadius: 1.5,
-                            }}
-                          />
-                        ))}
-                      </React.Fragment>
-                    ))}
+                  <View style={{ width: canvasWidth, height: canvasHeight, position: "relative" }}>
+                    {paths.map((path, pathIndex) => 
+                      path.map((point, pointIndex) => (
+                        <View
+                          key={`${pathIndex}-${pointIndex}`}
+                          style={{
+                            position: "absolute",
+                            left: point.x - 2,
+                            top: point.y - 2,
+                            width: 4,
+                            height: 4,
+                            backgroundColor: "#000000",
+                            borderRadius: 2,
+                          }}
+                        />
+                      ))
+                    )}
                     {currentPath.map((point, pointIndex) => (
                       <View
-                        key={pointIndex}
+                        key={`current-${pointIndex}`}
                         style={{
                           position: "absolute",
-                          left: point.x - 1.5,
-                          top: point.y - 1.5,
-                          width: 3,
-                          height: 3,
+                          left: point.x - 2,
+                          top: point.y - 2,
+                          width: 4,
+                          height: 4,
                           backgroundColor: "#000000",
-                          borderRadius: 1.5,
+                          borderRadius: 2,
                         }}
                       />
                     ))}
