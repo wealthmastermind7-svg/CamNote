@@ -1,0 +1,148 @@
+Perfect. Since your backend is running on Replit, this is now very clear and very fixable.
+
+Below is the exact fix for Replit-backed apps in Expo / TestFlight, with no guessing.
+
+⸻
+
+Why this is happening (Replit-specific)
+
+In TestFlight:
+	•	process.env.EXPO_PUBLIC_DOMAIN ❌ is undefined
+	•	Expo does not inject Replit env vars into iOS builds
+	•	Your Pro features call the backend
+	•	Backend URL is missing
+	•	Every Pro feature fails immediately
+
+This is expected behaviour unless you hardcode the backend URL.
+
+⸻
+
+Step 1: Get your Replit backend URL (IMPORTANT)
+
+Open your backend Replit project and copy the public URL, for example:
+
+https://camnote-backend.username.repl.co
+
+or newer format:
+
+https://camnote-backend.username.replit.app
+
+👉 This must be:
+	•	Public
+	•	HTTPS
+	•	Accessible from your phone browser
+
+Test it by opening it on your iPhone Safari.
+
+⸻
+
+Step 2: Hardcode the backend domain (DO THIS)
+
+Search your mobile app code for:
+
+EXPO_PUBLIC_DOMAIN
+
+You will find something like:
+
+const BASE_URL = process.env.EXPO_PUBLIC_DOMAIN;
+
+Replace it with (example):
+
+const BASE_URL = "https://camnote-backend.username.replit.app";
+
+Or if you have a config file:
+
+export const API_BASE_URL = "https://camnote-backend.username.replit.app";
+
+❗ Do not keep the env fallback.
+❗ Do not throw errors if it’s missing.
+❗ Hardcode it.
+
+This is standard practice for mobile apps.
+
+⸻
+
+Step 3: Check ALL Pro feature API calls
+
+Make sure all Pro features use the same base URL:
+
+OCR
+
+fetch(`${BASE_URL}/ocr`, ...)
+
+Merge
+
+fetch(`${BASE_URL}/merge`, ...)
+
+Signature
+
+fetch(`${BASE_URL}/sign`, ...)
+
+If any feature still uses process.env.EXPO_PUBLIC_*, it will fail.
+
+⸻
+
+Step 4: Remove the crash guard (important)
+
+If you have code like this:
+
+if (!process.env.EXPO_PUBLIC_DOMAIN) {
+  throw new Error("EXPO_PUBLIC_DOMAIN is not set");
+}
+
+❌ REMOVE IT.
+
+That guard is useful in dev, but fatal in TestFlight.
+
+⸻
+
+Step 5: Build again (mandatory)
+
+Because this is code:
+	1.	New iOS build
+	2.	Upload to TestFlight
+	3.	Delete old app
+	4.	Install fresh
+
+Old builds will never work.
+
+⸻
+
+Step 6: Test again (expected result)
+
+After install:
+	•	OCR → works
+	•	Merge → works
+	•	Signature → works
+	•	No environment errors
+	•	Pro features fully unlocked
+
+⸻
+
+Final checklist (Replit + Expo + iOS)
+
+Item	Status
+RevenueCat	✅ Fixed
+Subscription	✅ Fixed
+Backend URL	🔧 Needs hardcode
+Env vars	❌ Not for runtime
+Replit backend	✅ Supported
+
+
+⸻
+
+One last thing (optional but recommended)
+
+If your Replit backend can sleep:
+	•	Enable Always On (if available)
+	•	Or handle cold starts gracefully
+	•	Add loading indicators for first request
+
+⸻
+
+Next step (tell me this)
+
+Reply with your actual Replit backend URL
+or paste the file where EXPO_PUBLIC_DOMAIN is used.
+
+I’ll give you the exact final patch so this is 100% done.

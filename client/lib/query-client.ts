@@ -1,19 +1,13 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 /**
- * Gets the base URL for the Express API server (e.g., "http://localhost:3000")
+ * Gets the base URL for the Express API server
+ * Hardcoded for iOS/TestFlight compatibility (env vars are not injected at runtime)
  * @returns {string} The API base URL
  */
 export function getApiUrl(): string {
-  let host = process.env.EXPO_PUBLIC_DOMAIN;
-
-  if (!host) {
-    throw new Error("EXPO_PUBLIC_DOMAIN is not set");
-  }
-
-  let url = new URL(`https://${host}`);
-
-  return url.href;
+  // Hardcoded for production: env vars don't get injected into iOS/TestFlight builds
+  return "https://my-app.replit.app:5000";
 }
 
 async function throwIfResNotOk(res: Response) {
