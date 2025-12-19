@@ -522,4 +522,28 @@ const styles = StyleSheet.create({
     marginTop: Spacing.lg,
     padding: Spacing.md,
   },
+  positionControls: {
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    marginVertical: Spacing.md,
+  },
+  controlRow: {
+    marginBottom: Spacing.sm,
+  },
+  slider: {
+    height: 4,
+    backgroundColor: "#E5E7EB",
+    borderRadius: 2,
+    marginVertical: Spacing.sm,
+    position: "relative",
+  },
+  sliderThumb: {
+    width: 20,
+    height: 20,
+    backgroundColor: "#22C55E",
+    borderRadius: 10,
+    position: "absolute",
+    top: -8,
+    marginLeft: -10,
+  },
 });
