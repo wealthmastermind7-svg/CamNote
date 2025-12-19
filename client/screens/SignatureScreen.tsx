@@ -35,6 +35,8 @@ export default function SignatureScreen() {
   const [isSigning, setIsSigning] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
   const [signedImageUri, setSignedImageUri] = useState<string | null>(null);
+  const [signatureX, setSignatureX] = useState(50);
+  const [signatureY, setSignatureY] = useState(80);
 
   const pickDocument = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -169,8 +171,8 @@ export default function SignatureScreen() {
       
       const signatureCanvasWidth = SCREEN_WIDTH - Spacing.lg * 2;
       const signatureCanvasHeight = 200;
-      formData.append("x", "50");
-      formData.append("y", "80");
+      formData.append("x", String(signatureX));
+      formData.append("y", String(signatureY));
       formData.append("width", String(Math.round(signatureCanvasWidth)));
       formData.append("height", String(signatureCanvasHeight));
 
@@ -315,12 +317,12 @@ export default function SignatureScreen() {
                           key={`${pathIndex}-${pointIndex}`}
                           style={{
                             position: "absolute",
-                            left: point.x - 2,
-                            top: point.y - 2,
-                            width: 4,
-                            height: 4,
+                            left: point.x - 3.5,
+                            top: point.y - 3.5,
+                            width: 7,
+                            height: 7,
                             backgroundColor: "#000000",
-                            borderRadius: 2,
+                            borderRadius: 3.5,
                           }}
                         />
                       ))
@@ -330,12 +332,12 @@ export default function SignatureScreen() {
                         key={`current-${pointIndex}`}
                         style={{
                           position: "absolute",
-                          left: point.x - 2,
-                          top: point.y - 2,
-                          width: 4,
-                          height: 4,
+                          left: point.x - 3.5,
+                          top: point.y - 3.5,
+                          width: 7,
+                          height: 7,
                           backgroundColor: "#000000",
-                          borderRadius: 2,
+                          borderRadius: 3.5,
                         }}
                       />
                     ))}
@@ -348,6 +350,39 @@ export default function SignatureScreen() {
                 <ThemedText type="small" style={[styles.hintText, { color: theme.textSecondary }]}>
                   Draw your signature in the white area above
                 </ThemedText>
+              </View>
+
+              <View style={[styles.positionControls, { backgroundColor: theme.backgroundSecondary }]}>
+                <View style={styles.controlRow}>
+                  <ThemedText type="small">Position X: {signatureX}px</ThemedText>
+                  <View style={styles.slider} />
+                </View>
+                <Pressable
+                  style={styles.slider}
+                  onPress={(event) => {
+                    const { locationX } = event.nativeEvent;
+                    if (locationX !== undefined) {
+                      setSignatureX(Math.max(0, Math.min(200, Math.round(locationX / 2))));
+                    }
+                  }}
+                >
+                  <View style={[styles.sliderThumb, { left: `${(signatureX / 200) * 100}%` }]} />
+                </Pressable>
+                <View style={styles.controlRow}>
+                  <ThemedText type="small">Position Y: {signatureY}px</ThemedText>
+                  <View style={styles.slider} />
+                </View>
+                <Pressable
+                  style={styles.slider}
+                  onPress={(event) => {
+                    const { locationX } = event.nativeEvent;
+                    if (locationX !== undefined) {
+                      setSignatureY(Math.max(0, Math.min(300, Math.round(locationX / 2))));
+                    }
+                  }}
+                >
+                  <View style={[styles.sliderThumb, { left: `${(signatureY / 300) * 100}%` }]} />
+                </Pressable>
               </View>
 
               <View style={styles.signatureActions}>
